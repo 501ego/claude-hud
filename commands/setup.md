@@ -256,6 +256,7 @@ Use AskUserQuestion:
 - options:
   - "Tools activity" — Shows running/completed tools (◐ Edit: file.ts | ✓ Read ×3)
   - "Agents & Todos" — Shows subagent status and todo progress
+  - "Session cost" — Shows estimated session cost ($0.42)
   - "Session info" — Shows session duration and config counts (CLAUDE.md, rules, MCPs)
   - "Session name" — Shows session slug or custom title from /rename
   - "Custom line" — Display a custom phrase in the HUD
@@ -266,6 +267,7 @@ Use AskUserQuestion:
 |-----------|------------|
 | Tools activity | `display.showTools: true` |
 | Agents & Todos | `display.showAgents: true, display.showTodos: true` |
+| Session cost | `display.showCost: true` |
 | Session info | `display.showDuration: true, display.showConfigCounts: true` |
 | Session name | `display.showSessionName: true` |
 | Custom line | `display.customLine: "<user's text>"` — ask user for the text (max 80 chars) |
