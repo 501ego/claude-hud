@@ -158,11 +158,28 @@ Or edit `~/.claude/plugins/claude-hud/config.json` directly.
 
 ### Usage-Reset Notifications
 
-Get a desktop notification + sound when your 5-hour or 7-day tokens refresh. Set up via cron:
+Get a desktop notification + sound when your 5-hour or 7-day tokens refresh.
+
+The `/claude-hud:setup` command will guide you through this. To set it up manually:
 
 ```bash
-# Add to crontab -e
-* * * * * python3 ~/.claude/scripts/claude-notify.py
+# 1. Copy the script (after plugin is installed)
+mkdir -p ~/.claude/scripts
+cp ~/.claude/plugins/cache/claude-hud/claude-hud/*/scripts/claude-notify.py ~/.claude/scripts/claude-notify.py
+
+# 2. Add cron job
+(crontab -l 2>/dev/null; echo "* * * * * python3 $HOME/.claude/scripts/claude-notify.py") | crontab -
+```
+
+Then enable in `~/.claude/plugins/claude-hud/config.json`:
+```json
+{
+  "notifications": {
+    "enabled": true,
+    "methods": ["notify-send", "bell"],
+    "minutesBefore": 0
+  }
+}
 ```
 
 Works on Linux (notify-send + paplay), macOS (osascript + afplay), and Windows (PowerShell).

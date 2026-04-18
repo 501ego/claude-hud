@@ -276,7 +276,47 @@ Merge with existing config if the file already exists. Only write keys the user 
 
 ---
 
-## Step 5: Verify & Finish
+## Step 5: Usage-Reset Notifications (Optional)
+
+Claude HUD can fire a desktop notification + sound when your 5-hour or 7-day token quota refreshes.
+
+Ask the user if they'd like to set up usage-reset notifications.
+
+**If yes**, guide them through:
+
+1. Copy the notification script to `~/.claude/scripts/`:
+   ```bash
+   mkdir -p ~/.claude/scripts
+   cp "$(ls -d ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/claude-hud/claude-hud/*/)/scripts/claude-notify.py" ~/.claude/scripts/claude-notify.py
+   ```
+
+2. Add a cron job to run it every minute:
+   ```bash
+   (crontab -l 2>/dev/null; echo "* * * * * python3 $HOME/.claude/scripts/claude-notify.py") | crontab -
+   ```
+
+3. Enable notifications in `~/.claude/plugins/claude-hud/config.json`:
+   ```json
+   {
+     "notifications": {
+       "enabled": true,
+       "onUsageReset": true,
+       "methods": ["notify-send", "bell"],
+       "minutesBefore": 0
+     }
+   }
+   ```
+
+**Platform notes:**
+- **Linux**: requires `notify-send` (`sudo apt install libnotify-bin`) and `paplay`/`aplay` for sound
+- **macOS**: uses `osascript` (built-in) — no extra install needed
+- **Windows**: uses PowerShell MessageBox — no extra install needed
+
+**If no**: skip this step.
+
+---
+
+## Step 6: Verify & Finish
 
 **First, confirm the user has restarted Claude Code** since Step 3 wrote the config. If they haven't, ask them to restart before proceeding — the HUD cannot appear in the same session where setup was run.
  
