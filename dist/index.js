@@ -4,12 +4,10 @@ import { render } from "./render/index.js";
 import { countConfigs } from "./config-reader.js";
 import { getGitStatus } from "./git.js";
 import { loadConfig } from "./config.js";
-import { parseExtraCmdArg, runExtraCmd } from "./extra-cmd.js";
-import { getClaudeCodeVersion } from "./version.js";
 import { getMemoryUsage } from "./memory.js";
-import { setLanguage, t } from "./i18n/index.js";
 import { fileURLToPath } from "node:url";
-import { realpathSync } from "node:fs";
+import { realpathSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 export async function main(overrides = {}) {
     const deps = {
         readStdin,
@@ -18,9 +16,6 @@ export async function main(overrides = {}) {
         countConfigs,
         getGitStatus,
         loadConfig,
-        parseExtraCmdArg,
-        runExtraCmd,
-        getClaudeCodeVersion,
         getMemoryUsage,
         render,
         now: () => Date.now(),
@@ -32,11 +27,10 @@ export async function main(overrides = {}) {
         if (!stdin) {
             // Running without stdin - this happens during setup verification
             const config = await deps.loadConfig();
-            setLanguage(config.language);
             const isMacOS = process.platform === "darwin";
-            deps.log(t("init.initializing"));
+            deps.log("[claude-hud] Initializing...");
             if (isMacOS) {
-                deps.log(t("init.macosNote"));
+                deps.log("[claude-hud] Note: On macOS, you may need to restart Claude Code for the HUD to appear.");
             }
             return;
         }
@@ -44,7 +38,6 @@ export async function main(overrides = {}) {
         const transcript = await deps.parseTranscript(transcriptPath);
         const { claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle } = await deps.countConfigs(stdin.cwd);
         const config = await deps.loadConfig();
-        setLanguage(config.language);
         const gitStatus = config.gitStatus.enabled
             ? await deps.getGitStatus(stdin.cwd)
             : null;
@@ -53,12 +46,7 @@ export async function main(overrides = {}) {
         if (config.display.showUsage !== false) {
             usageData = deps.getUsageFromStdin(stdin);
         }
-        const extraCmd = deps.parseExtraCmdArg();
-        const extraLabel = extraCmd ? await deps.runExtraCmd(extraCmd) : null;
         const sessionDuration = formatSessionDuration(transcript.sessionStart, deps.now);
-        const claudeCodeVersion = config.display.showClaudeCodeVersion
-            ? await deps.getClaudeCodeVersion()
-            : undefined;
         const memoryUsage = config.display.showMemoryUsage && config.lineLayout === "expanded"
             ? await deps.getMemoryUsage()
             : null;
@@ -70,14 +58,15 @@ export async function main(overrides = {}) {
             mcpCount,
             hooksCount,
             sessionDuration,
+            extraLabel: null,
             gitStatus,
             usageData,
             memoryUsage,
             config,
-            extraLabel,
             outputStyle,
-            claudeCodeVersion,
+            terminalWidth: 0,
         };
+        writeUsageState(usageData, config);
         deps.render(ctx);
     }
     catch (error) {
@@ -97,6 +86,29 @@ export function formatSessionDuration(sessionStart, now = () => Date.now()) {
     const hours = Math.floor(mins / 60);
     const remainingMins = mins % 60;
     return `${hours}h ${remainingMins}m`;
+}
+let _lastUsageStateHash = '';
+function writeUsageState(usageData, config) {
+    if (!usageData)
+        return;
+    const key = `${usageData.fiveHour}|${usageData.sevenDay}|${usageData.fiveHourResetAt?.toISOString()}|${usageData.sevenDayResetAt?.toISOString()}`;
+    if (key === _lastUsageStateHash)
+        return;
+    _lastUsageStateHash = key;
+    try {
+        const pluginDir = join(process.env.HOME ?? '~', '.claude', 'plugins', 'claude-hud');
+        const state = {
+            fiveHour: usageData.fiveHour,
+            sevenDay: usageData.sevenDay,
+            fiveHourResetAt: usageData.fiveHourResetAt?.toISOString() ?? null,
+            sevenDayResetAt: usageData.sevenDayResetAt?.toISOString() ?? null,
+            updatedAt: new Date().toISOString(),
+            notifications: config.notifications,
+        };
+        writeFileSync(join(pluginDir, 'usage-state.json'), JSON.stringify(state), 'utf8');
+    }
+    catch {
+    }
 }
 const scriptPath = fileURLToPath(import.meta.url);
 const argvPath = process.argv[1];

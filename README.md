@@ -1,9 +1,11 @@
+> **Fork Notice:** This is a fork of [jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud) maintained by [501ego](https://github.com/501ego).
+
 # Claude HUD
 
 A Claude Code plugin that shows what's happening — context usage, active tools, running agents, and todo progress. Always visible below your input.
 
-[![License](https://img.shields.io/github/license/jarrodwatts/claude-hud?v=2)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/jarrodwatts/claude-hud)](https://github.com/jarrodwatts/claude-hud/stargazers)
+[![License](https://img.shields.io/github/license/501ego/claude-hud?v=2)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/501ego/claude-hud)](https://github.com/501ego/claude-hud/stargazers)
 
 ![Claude HUD in action](claude-hud-preview-5-2.png)
 
@@ -13,7 +15,7 @@ Inside a Claude Code instance, run the following commands:
 
 **Step 1: Add the marketplace**
 ```
-/plugin marketplace add jarrodwatts/claude-hud
+/plugin marketplace add 501ego/claude-hud
 ```
 
 **Step 2: Install the plugin**

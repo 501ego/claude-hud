@@ -1,6 +1,5 @@
 import type { RenderContext } from "../../types.js";
 import { label } from "../colors.js";
-import { t } from "../../i18n/index.js";
 
 export function renderEnvironmentLine(ctx: RenderContext): string | null {
   const display = ctx.config?.display;
@@ -17,7 +16,7 @@ export function renderEnvironmentLine(ctx: RenderContext): string | null {
     }
 
     if (ctx.rulesCount > 0) {
-      parts.push(`${ctx.rulesCount} ${t("label.rules")}`);
+      parts.push(`${ctx.rulesCount} rules`);
     }
 
     if (ctx.mcpCount > 0) {
@@ -25,7 +24,7 @@ export function renderEnvironmentLine(ctx: RenderContext): string | null {
     }
 
     if (ctx.hooksCount > 0) {
-      parts.push(`${ctx.hooksCount} ${t("label.hooks")}`);
+      parts.push(`${ctx.hooksCount} hooks`);
     }
   }
 

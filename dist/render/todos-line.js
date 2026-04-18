@@ -1,5 +1,4 @@
 import { yellow, green, label } from "./colors.js";
-import { t } from "../i18n/index.js";
 export function renderTodosLine(ctx) {
     const { todos } = ctx.transcript;
     const colors = ctx.config?.colors;
@@ -11,7 +10,7 @@ export function renderTodosLine(ctx) {
     const total = todos.length;
     if (!inProgress) {
         if (completed === total && total > 0) {
-            return `${green("✓")} ${t("status.allTodosComplete")} ${label(`(${completed}/${total})`, colors)}`;
+            return `${green("✓")} All todos complete ${label(`(${completed}/${total})`, colors)}`;
         }
         return null;
     }

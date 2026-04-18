@@ -4,8 +4,6 @@ import { render } from "./render/index.js";
 import { countConfigs } from "./config-reader.js";
 import { getGitStatus } from "./git.js";
 import { loadConfig } from "./config.js";
-import { parseExtraCmdArg, runExtraCmd } from "./extra-cmd.js";
-import { getClaudeCodeVersion } from "./version.js";
 import { getMemoryUsage } from "./memory.js";
 export type MainDeps = {
     readStdin: typeof readStdin;
@@ -14,9 +12,6 @@ export type MainDeps = {
     countConfigs: typeof countConfigs;
     getGitStatus: typeof getGitStatus;
     loadConfig: typeof loadConfig;
-    parseExtraCmdArg: typeof parseExtraCmdArg;
-    runExtraCmd: typeof runExtraCmd;
-    getClaudeCodeVersion: typeof getClaudeCodeVersion;
     getMemoryUsage: typeof getMemoryUsage;
     render: typeof render;
     now: () => number;

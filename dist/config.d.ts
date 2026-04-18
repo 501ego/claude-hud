@@ -1,4 +1,3 @@
-import type { Language } from './i18n/types.js';
 export type LineLayoutType = 'compact' | 'expanded';
 export type AutocompactBufferMode = 'enabled' | 'disabled';
 export type ContextValueMode = 'percent' | 'tokens' | 'remaining' | 'both';
@@ -10,7 +9,7 @@ export type ContextValueMode = 'percent' | 'tokens' | 'remaining' | 'both';
  *   short:   Strip context suffix AND "Claude " prefix (e.g. "Opus 4.6")
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
-export type HudElement = 'project' | 'context' | 'usage' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos';
+export type HudElement = 'project' | 'context' | 'usage' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'cost';
 export type HudColorName = 'dim' | 'red' | 'green' | 'yellow' | 'magenta' | 'cyan' | 'brightBlue' | 'brightMagenta';
 /** A color value: named preset, 256-color index (0-255), or hex string (#rrggbb). */
 export type HudColorValue = HudColorName | number | string;
@@ -26,14 +25,23 @@ export interface HudColorOverrides {
     gitBranch: HudColorValue;
     label: HudColorValue;
     custom: HudColorValue;
+    tools: HudColorValue;
 }
 export declare const DEFAULT_ELEMENT_ORDER: HudElement[];
+export interface NotificationsConfig {
+    enabled: boolean;
+    onUsageReset: boolean;
+    methods: Array<'notify-send' | 'warp' | 'bell'>;
+    minutesBefore: number;
+    resumeCommand: string;
+}
 export interface HudConfig {
-    language: Language;
     lineLayout: LineLayoutType;
     showSeparators: boolean;
     pathLevels: 1 | 2 | 3;
+    terminalWidth?: number;
     elementOrder: HudElement[];
+    notifications: NotificationsConfig;
     gitStatus: {
         enabled: boolean;
         showDirty: boolean;
@@ -50,15 +58,12 @@ export interface HudConfig {
         showConfigCounts: boolean;
         showCost: boolean;
         showDuration: boolean;
-        showSpeed: boolean;
         showTokenBreakdown: boolean;
         showUsage: boolean;
         usageBarEnabled: boolean;
         showTools: boolean;
         showAgents: boolean;
         showTodos: boolean;
-        showSessionName: boolean;
-        showClaudeCodeVersion: boolean;
         showMemoryUsage: boolean;
         showSessionTokens: boolean;
         showOutputStyle: boolean;

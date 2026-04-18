@@ -1,5 +1,4 @@
 import { label } from "../colors.js";
-import { t } from "../../i18n/index.js";
 export function renderEnvironmentLine(ctx) {
     const display = ctx.config?.display;
     const totalCounts = ctx.claudeMdCount + ctx.rulesCount + ctx.mcpCount + ctx.hooksCount;
@@ -12,13 +11,13 @@ export function renderEnvironmentLine(ctx) {
             parts.push(`${ctx.claudeMdCount} CLAUDE.md`);
         }
         if (ctx.rulesCount > 0) {
-            parts.push(`${ctx.rulesCount} ${t("label.rules")}`);
+            parts.push(`${ctx.rulesCount} rules`);
         }
         if (ctx.mcpCount > 0) {
             parts.push(`${ctx.mcpCount} MCPs`);
         }
         if (ctx.hooksCount > 0) {
-            parts.push(`${ctx.hooksCount} ${t("label.hooks")}`);
+            parts.push(`${ctx.hooksCount} hooks`);
         }
     }
     if (showOutputStyle && ctx.outputStyle) {

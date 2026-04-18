@@ -6,19 +6,25 @@ import { createHash } from 'node:crypto';
 import { getHudPluginDir } from './claude-config-dir.js';
 import type { TranscriptData, ToolEntry, AgentEntry, TodoItem, SessionTokenUsage } from './types.js';
 
+interface TokenUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
+
 interface TranscriptLine {
   timestamp?: string;
   type?: string;
   slug?: string;
   customTitle?: string;
   message?: {
+    model?: string;
     content?: ContentBlock[];
-    usage?: {
-      input_tokens?: number;
-      output_tokens?: number;
-      cache_creation_input_tokens?: number;
-      cache_read_input_tokens?: number;
-    };
+    usage?: TokenUsage;
+  };
+  toolUseResult?: {
+    usage?: TokenUsage;
   };
 }
 
@@ -53,6 +59,7 @@ interface SerializedTranscriptData {
   sessionStart?: string;
   sessionName?: string;
   sessionTokens?: SessionTokenUsage;
+  modelUsage?: Record<string, SessionTokenUsage>;
 }
 
 interface TranscriptCacheFile {
@@ -121,6 +128,7 @@ function serializeTranscriptData(data: TranscriptData): SerializedTranscriptData
     sessionStart: data.sessionStart?.toISOString(),
     sessionName: data.sessionName,
     sessionTokens: data.sessionTokens,
+    modelUsage: data.modelUsage,
   };
 }
 
@@ -140,6 +148,7 @@ function deserializeTranscriptData(data: SerializedTranscriptData): TranscriptDa
     sessionStart: data.sessionStart ? new Date(data.sessionStart) : undefined,
     sessionName: data.sessionName,
     sessionTokens: normalizeSessionTokens(data.sessionTokens),
+    modelUsage: data.modelUsage,
   };
 }
 
@@ -210,6 +219,9 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
     cacheCreationTokens: 0,
     cacheReadTokens: 0,
   };
+  const modelUsage: Record<string, SessionTokenUsage> = {};
+  // tool_use_id → resolved model id for Agent tool calls
+  const agentToolModel = new Map<string, string>();
 
   let parsedCleanly = false;
 
@@ -230,13 +242,59 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
         } else if (typeof entry.slug === 'string') {
           latestSlug = entry.slug;
         }
-        // Accumulate token usage from assistant messages
+        if (entry.type === 'assistant' && entry.message?.content) {
+          for (const block of entry.message.content) {
+            if (block.type === 'tool_use' && block.name === 'Agent' && block.id && block.input?.model) {
+              const alias = String(block.input.model).toLowerCase();
+              const resolved = alias.includes('haiku') ? 'claude-haiku-4-5'
+                : alias.includes('opus') ? 'claude-opus-4-6'
+                : alias.includes('sonnet') ? 'claude-sonnet-4-6'
+                : null;
+              if (resolved) agentToolModel.set(block.id, resolved);
+            }
+          }
+        }
         if (entry.type === 'assistant' && entry.message?.usage) {
           const usage = entry.message.usage;
-          sessionTokens.inputTokens += normalizeTokenCount(usage.input_tokens);
-          sessionTokens.outputTokens += normalizeTokenCount(usage.output_tokens);
-          sessionTokens.cacheCreationTokens += normalizeTokenCount(usage.cache_creation_input_tokens);
-          sessionTokens.cacheReadTokens += normalizeTokenCount(usage.cache_read_input_tokens);
+          const inp = normalizeTokenCount(usage.input_tokens);
+          const out = normalizeTokenCount(usage.output_tokens);
+          const cacheCreate = normalizeTokenCount(usage.cache_creation_input_tokens);
+          const cacheRead = normalizeTokenCount(usage.cache_read_input_tokens);
+          sessionTokens.inputTokens += inp;
+          sessionTokens.outputTokens += out;
+          sessionTokens.cacheCreationTokens += cacheCreate;
+          sessionTokens.cacheReadTokens += cacheRead;
+          const modelId = entry.message.model;
+          if (modelId) {
+            if (!modelUsage[modelId]) {
+              modelUsage[modelId] = { inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 };
+            }
+            modelUsage[modelId].inputTokens += inp;
+            modelUsage[modelId].outputTokens += out;
+            modelUsage[modelId].cacheCreationTokens += cacheCreate;
+            modelUsage[modelId].cacheReadTokens += cacheRead;
+          }
+        }
+        if (entry.type === 'user' && entry.toolUseResult?.usage && entry.message?.content) {
+          for (const block of entry.message.content) {
+            if (block.type === 'tool_result' && block.tool_use_id) {
+              const agentModel = agentToolModel.get(block.tool_use_id);
+              if (agentModel) {
+                const usage = entry.toolUseResult.usage;
+                const inp = normalizeTokenCount(usage.input_tokens);
+                const out = normalizeTokenCount(usage.output_tokens);
+                const cacheCreate = normalizeTokenCount(usage.cache_creation_input_tokens);
+                const cacheRead = normalizeTokenCount(usage.cache_read_input_tokens);
+                if (!modelUsage[agentModel]) {
+                  modelUsage[agentModel] = { inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 };
+                }
+                modelUsage[agentModel].inputTokens += inp;
+                modelUsage[agentModel].outputTokens += out;
+                modelUsage[agentModel].cacheCreationTokens += cacheCreate;
+                modelUsage[agentModel].cacheReadTokens += cacheRead;
+              }
+            }
+          }
         }
         processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, result);
       } catch {
@@ -254,6 +312,7 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
   result.todos = latestTodos;
   result.sessionName = customTitle ?? latestSlug;
   result.sessionTokens = sessionTokens;
+  result.modelUsage = modelUsage;
   if (parsedCleanly) {
     writeTranscriptCache(transcriptPath, transcriptState, result);
   }

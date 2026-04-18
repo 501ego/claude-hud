@@ -10,6 +10,7 @@ export declare function claudeOrange(text: string): string;
 export declare function model(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function project(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function git(text: string, colors?: Partial<HudColorOverrides>): string;
+export declare function tools(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function gitBranch(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function label(text: string, colors?: Partial<HudColorOverrides>): string;
 export declare function custom(text: string, colors?: Partial<HudColorOverrides>): string;

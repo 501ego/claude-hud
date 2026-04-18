@@ -330,3 +330,140 @@ Use AskUserQuestion:
    - Check: `ls "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/claude-hud/"`
 
 5. **If still stuck**: Show the user the exact command that was generated and the error, so they can report it or debug further
+
+---
+
+## Manual Configuration Reference
+
+Configure claude-hud by editing `~/.claude/claude-hud/config.json` (or `~/.claude/plugins/claude-hud/config.json`).
+
+### Fields
+
+#### `lineLayout`
+
+**Type:** `'compact' | 'expanded'`
+**Default:** `'expanded'`
+
+Controls the overall layout mode.
+
+- `expanded` — multi-line layout with separate lines for context, usage, tools, agents, and todos.
+- `compact` — single dense line: `[Model] project git:(branch) │ ctx% │ $cost │ duration`
+
+#### `display.showDuration`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, appends the session duration (e.g. `2h 14m`) to the status line.
+
+#### `display.showTools`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, renders a tools activity line showing running and recently completed tools.
+
+#### `display.showAgents`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, renders an agents line showing active subagent tasks.
+
+#### `display.showTodos`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, renders a todos line showing the current in-progress todo item.
+
+#### `display.showConfigCounts`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, displays counts of CLAUDE.md files, rules, MCPs, and hooks in the environment.
+
+#### `display.showCost`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, shows the estimated session cost derived from token usage and the built-in pricing table for the active model. Cost is resolved automatically from the model ID — no manual rate override is required.
+
+#### `display.showUsage`
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `false`, hides the rate limit usage bars.
+
+#### `display.showContextBar`
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `false`, hides the context usage bar.
+
+#### `display.showModel`
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `false`, hides the model name badge.
+
+#### `display.showProject`
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `false`, hides the project path.
+
+#### `display.showTokenBreakdown`
+
+**Type:** `boolean`
+**Default:** `true`
+
+When `false`, suppresses the token breakdown shown at high context usage (>85%).
+
+### Example
+
+```json
+{
+  "lineLayout": "compact",
+  "display": {
+    "showDuration": true,
+    "showTools": true,
+    "showAgents": false,
+    "showTodos": true,
+    "showConfigCounts": false,
+    "showCost": true
+  }
+}
+```
+
+Place this file at `~/.claude/claude-hud/config.json`. Changes take effect on the next invocation (every ~300 ms).
+
+### Layout reference
+
+| Value | Description |
+|-------|-------------|
+| `expanded` | Multi-line; each element on its own line |
+| `compact` | Single line with `│` separators |
+
+### All configurable display fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `lineLayout` | `'compact' \| 'expanded'` | `'expanded'` | Layout mode |
+| `display.showDuration` | `boolean` | `false` | Session duration |
+| `display.showTools` | `boolean` | `false` | Tools activity line |
+| `display.showAgents` | `boolean` | `false` | Agents status line |
+| `display.showTodos` | `boolean` | `false` | Todo progress line |
+| `display.showConfigCounts` | `boolean` | `false` | Environment counts line |
+| `display.showCost` | `boolean` | `false` | Estimated cost segment |
+| `display.showUsage` | `boolean` | `true` | Rate limit usage bars |
+| `display.showContextBar` | `boolean` | `true` | Context usage bar |
+| `display.showModel` | `boolean` | `true` | Model name badge |
+| `display.showProject` | `boolean` | `true` | Project path |
+| `display.showTokenBreakdown` | `boolean` | `true` | Token breakdown at high context |

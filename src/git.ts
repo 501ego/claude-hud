@@ -33,26 +33,10 @@ export interface GitStatus {
   branchUrl?: string;
 }
 
-export async function getGitBranch(cwd?: string): Promise<string | null> {
-  if (!cwd) return null;
-
-  try {
-    const { stdout } = await execFileAsync(
-      'git',
-      ['rev-parse', '--abbrev-ref', 'HEAD'],
-      { cwd, timeout: 1000, encoding: 'utf8' }
-    );
-    return stdout.trim() || null;
-  } catch {
-    return null;
-  }
-}
-
 export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
   if (!cwd) return null;
 
   try {
-    // Get branch name
     const { stdout: branchOut } = await execFileAsync(
       'git',
       ['rev-parse', '--abbrev-ref', 'HEAD'],
@@ -61,7 +45,6 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
     const branch = branchOut.trim();
     if (!branch) return null;
 
-    // Check for dirty state and parse file stats
     let isDirty = false;
     let fileStats: FileStats | undefined;
     let lineDiff: LineDiff | undefined;
@@ -77,10 +60,8 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
         fileStats = parseFileStats(trimmed);
       }
     } catch {
-      // Ignore errors, assume clean
     }
 
-    // Get per-file and total line diffs
     if (isDirty) {
       try {
         const { stdout: numstatOut } = await execFileAsync(
@@ -94,11 +75,9 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
           applyLineDiffsToFiles(fileStats.trackedFiles, perFileDiff);
         }
       } catch {
-        // Ignore errors
       }
     }
 
-    // Get ahead/behind counts
     let ahead = 0;
     let behind = 0;
     try {
@@ -113,10 +92,8 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
         ahead = parseInt(parts[1], 10) || 0;
       }
     } catch {
-      // No upstream or error, keep 0/0
     }
 
-    // Build GitHub branch URL from remote
     let branchUrl: string | undefined;
     try {
       const { stdout: remoteOut } = await execFileAsync(
@@ -132,7 +109,6 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
         branchUrl = `${httpsBase}/tree/${branch}`;
       }
     } catch {
-      // No remote or not GitHub
     }
 
     return { branch, isDirty, ahead, behind, fileStats, lineDiff, branchUrl };
@@ -142,7 +118,7 @@ export async function getGitStatus(cwd?: string): Promise<GitStatus | null> {
 }
 
 /**
- * Parse git status --porcelain output and count file stats (Starship-compatible format)
+ * Parse git status --porcelain output into file stats.
  * Status codes: M=modified, A=added, D=deleted, ??=untracked
  */
 function parseFileStats(porcelainOutput: string): FileStats {
@@ -152,8 +128,8 @@ function parseFileStats(porcelainOutput: string): FileStats {
   for (const line of lines) {
     if (line.length < 2) continue;
 
-    const index = line[0];    // staged status
-    const worktree = line[1]; // unstaged status
+    const index = line[0];
+    const worktree = line[1];
 
     if (line.startsWith('??')) {
       stats.untracked++;
@@ -166,9 +142,8 @@ function parseFileStats(porcelainOutput: string): FileStats {
       const fullPath = line.slice(2).trimStart();
       stats.trackedFiles.push({ basename: fullPath.split('/').pop() ?? fullPath, fullPath, type: 'deleted' });
     } else if (index === 'M' || worktree === 'M' || index === 'R' || index === 'C') {
-      // M=modified, R=renamed (counts as modified), C=copied (counts as modified)
       stats.modified++;
-      // For renames, git porcelain shows "old -> new"; take the destination path
+      // For renames, git porcelain v1 shows "old -> new"; take the destination
       const fullPath = line.slice(2).trimStart().split(' -> ').pop() ?? line.slice(2).trimStart();
       stats.trackedFiles.push({ basename: fullPath.split('/').pop() ?? fullPath, fullPath, type: 'modified' });
     }
@@ -179,7 +154,7 @@ function parseFileStats(porcelainOutput: string): FileStats {
 
 /**
  * Parse `git diff --numstat HEAD` output.
- * Returns total line diff and a map of fullPath -> LineDiff.
+ * Returns total line diff and a per-file map.
  */
 function parseNumstat(numstatOutput: string): { totalDiff: LineDiff; perFileDiff: Map<string, LineDiff> } {
   const totalDiff: LineDiff = { added: 0, deleted: 0 };
@@ -191,7 +166,7 @@ function parseNumstat(numstatOutput: string): { totalDiff: LineDiff; perFileDiff
     const added = parseInt(parts[0], 10);
     const deleted = parseInt(parts[1], 10);
     const filePath = parts[2];
-    if (Number.isNaN(added) || Number.isNaN(deleted)) continue; // binary file
+    if (Number.isNaN(added) || Number.isNaN(deleted)) continue;
     totalDiff.added += added;
     totalDiff.deleted += deleted;
     perFileDiff.set(filePath, { added, deleted });

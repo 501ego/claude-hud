@@ -1,10 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { getModelName, formatModelName, getProviderLabel } from '../../stdin.js';
-import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, warning as warningColor, critical as criticalColor, label, model as modelColor, project as projectColor, red, green, yellow, dim, custom as customColor } from '../colors.js';
-import { t } from '../../i18n/index.js';
-import { renderCostEstimate } from './cost.js';
+import { estimateCostFromTokens } from '../../pricing.js';
 function hyperlink(uri, text) {
     const esc = '\x1b';
     const st = '\\';
@@ -14,13 +12,8 @@ export function renderProjectLine(ctx) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
     const parts = [];
-    if (display?.showModel !== false) {
-        const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
-        const providerLabel = getProviderLabel(ctx.stdin);
-        const modelQualifier = providerLabel ?? undefined;
-        const modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
-        parts.push(modelColor(`[${modelDisplay}]`, colors));
-    }
+    let modelPrefix = '';
+    // Project + git first
     let projectPart = null;
     if (display?.showProject !== false && ctx.stdin.cwd) {
         const segments = ctx.stdin.cwd.split(/[/\\]/).filter(Boolean);
@@ -38,9 +31,8 @@ export function renderProjectLine(ctx) {
         const linkedBranch = ctx.gitStatus.branchUrl ? hyperlink(ctx.gitStatus.branchUrl, coloredBranch) : coloredBranch;
         const gitInner = [linkedBranch];
         if (gitConfig?.showAheadBehind) {
-            if (ctx.gitStatus.ahead > 0) {
+            if (ctx.gitStatus.ahead > 0)
                 gitInner.push(formatAheadCount(ctx.gitStatus.ahead, gitConfig, colors));
-            }
             if (ctx.gitStatus.behind > 0)
                 gitInner.push(gitBranchColor(`↓${ctx.gitStatus.behind}`, colors));
         }
@@ -51,9 +43,8 @@ export function renderProjectLine(ctx) {
                 diffParts.push(green(`+${added}`));
             if (deleted > 0)
                 diffParts.push(red(`-${deleted}`));
-            if (diffParts.length > 0) {
+            if (diffParts.length > 0)
                 gitInner.push(`[${diffParts.join(' ')}]`);
-            }
         }
         gitPart = `${gitColor('git:(', colors)}${gitInner.join(' ')}${gitColor(')', colors)}`;
     }
@@ -66,36 +57,74 @@ export function renderProjectLine(ctx) {
     else if (gitPart) {
         parts.push(gitPart);
     }
-    if (display?.showSessionName && ctx.transcript.sessionName) {
-        parts.push(label(ctx.transcript.sessionName, colors));
-    }
-    if (display?.showClaudeCodeVersion && ctx.claudeCodeVersion) {
-        parts.push(label(`CC v${ctx.claudeCodeVersion}`, colors));
+    // Model badges after project/git
+    if (display?.showModel !== false) {
+        const currentModelRaw = getModelName(ctx.stdin);
+        const currentModel = formatModelName(currentModelRaw, ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
+        const providerLabel = getProviderLabel(ctx.stdin);
+        const modelQualifier = providerLabel ?? undefined;
+        const currentDisplay = modelQualifier ? `${currentModel} | ${modelQualifier}` : currentModel;
+        if (display?.showCost === true && ctx.transcript.modelUsage) {
+            const normalizeModelId = (id) => id.replace(/^claude-/, '')
+                .replace(/-(\d+)-(\d+)$/, ' $1.$2')
+                .replace(/-(\d+)$/, ' $1')
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase());
+            const usage = ctx.transcript.modelUsage;
+            const modelIds = Object.keys(usage).filter(id => /claude/i.test(id));
+            const sorted = [
+                ...modelIds.filter(id => id === currentModelRaw || currentModelRaw.includes(id) || id.includes(currentModelRaw)),
+                ...modelIds.filter(id => !(id === currentModelRaw || currentModelRaw.includes(id) || id.includes(currentModelRaw))),
+            ];
+            const badges = [];
+            for (let i = 0; i < sorted.length; i++) {
+                const id = sorted[i];
+                const st = usage[id];
+                const totalTok = st.inputTokens + st.outputTokens;
+                const cost = estimateCostFromTokens(id, st.inputTokens, st.outputTokens, st.cacheReadTokens);
+                const tokStr = totalTok >= 1_000_000 ? `${(totalTok / 1_000_000).toFixed(1)}M` : totalTok >= 1_000 ? `${(totalTok / 1_000).toFixed(1)}k` : `${totalTok}`;
+                const costStr = cost !== null ? `~$${cost.toFixed(4)}` : '~$?.??';
+                const displayName = formatModelName(normalizeModelId(id), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
+                const badge = `[${displayName}] ${tokStr} ${costStr}`;
+                badges.push(i === 0 ? modelColor(badge, colors) : dim(badge));
+            }
+            if (badges.length > 0) {
+                if (badges.length === 1) {
+                    parts.push(badges[0]);
+                }
+                else {
+                    const stripAnsi = (s) => s.replace(/\x1b\[[0-9;]*m/g, '');
+                    const horizontalWidth = badges.reduce((sum, b) => sum + stripAnsi(b).length, 0) + (badges.length - 1) * 3;
+                    if (ctx.terminalWidth > 0 && horizontalWidth <= ctx.terminalWidth) {
+                        parts.push(badges.join('  '));
+                    }
+                    else {
+                        modelPrefix = badges.join('\n') + '\n';
+                    }
+                }
+            }
+            else {
+                parts.push(modelColor(`[${currentDisplay}]`, colors));
+            }
+        }
+        else {
+            parts.push(modelColor(`[${currentDisplay}]`, colors));
+        }
     }
     if (ctx.extraLabel) {
         parts.push(label(ctx.extraLabel, colors));
     }
-    if (display?.showSpeed) {
-        const speed = getOutputSpeed(ctx.stdin);
-        if (speed !== null) {
-            parts.push(label(`${t('format.out')}: ${speed.toFixed(1)} ${t('format.tokPerSec')}`, colors));
-        }
-    }
     if (display?.showDuration !== false && ctx.sessionDuration) {
-        parts.push(label(`⏱️  ${ctx.sessionDuration}`, colors));
-    }
-    const costEstimate = renderCostEstimate(ctx);
-    if (costEstimate) {
-        parts.push(costEstimate);
+        parts.push(label(ctx.sessionDuration, colors));
     }
     const customLine = display?.customLine;
     if (customLine) {
         parts.push(customColor(customLine, colors));
     }
-    if (parts.length === 0) {
+    if (parts.length === 0 && !modelPrefix) {
         return null;
     }
-    return parts.join(' \u2502 ');
+    return modelPrefix + parts.join(' \u2502 ');
 }
 function formatAheadCount(ahead, gitConfig, colors) {
     const value = `↑${ahead}`;

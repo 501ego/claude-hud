@@ -1,6 +1,5 @@
 import type { RenderContext } from "../types.js";
 import { yellow, green, label } from "./colors.js";
-import { t } from "../i18n/index.js";
 
 export function renderTodosLine(ctx: RenderContext): string | null {
   const { todos } = ctx.transcript;
@@ -16,7 +15,7 @@ export function renderTodosLine(ctx: RenderContext): string | null {
 
   if (!inProgress) {
     if (completed === total && total > 0) {
-      return `${green("✓")} ${t("status.allTodosComplete")} ${label(`(${completed}/${total})`, colors)}`;
+      return `${green("✓")} All todos complete ${label(`(${completed}/${total})`, colors)}`;
     }
     return null;
   }

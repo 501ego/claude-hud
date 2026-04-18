@@ -2,7 +2,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { getHudPluginDir } from './claude-config-dir.js';
-import type { Language } from './i18n/types.js';
 
 export type LineLayoutType = 'compact' | 'expanded';
 
@@ -17,7 +16,7 @@ export type ContextValueMode = 'percent' | 'tokens' | 'remaining' | 'both';
  *   short:   Strip context suffix AND "Claude " prefix (e.g. "Opus 4.6")
  */
 export type ModelFormatMode = 'full' | 'compact' | 'short';
-export type HudElement = 'project' | 'context' | 'usage' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos';
+export type HudElement = 'project' | 'context' | 'usage' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos' | 'cost';
 export type HudColorName =
   | 'dim'
   | 'red'
@@ -43,6 +42,7 @@ export interface HudColorOverrides {
   gitBranch: HudColorValue;
   label: HudColorValue;
   custom: HudColorValue;
+  tools: HudColorValue;
 }
 
 export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
@@ -54,16 +54,26 @@ export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
   'tools',
   'agents',
   'todos',
+  'cost',
 ];
 
 const KNOWN_ELEMENTS = new Set<HudElement>(DEFAULT_ELEMENT_ORDER);
 
+export interface NotificationsConfig {
+  enabled: boolean;
+  onUsageReset: boolean;
+  methods: Array<'notify-send' | 'warp' | 'bell'>;
+  minutesBefore: number;
+  resumeCommand: string;
+}
+
 export interface HudConfig {
-  language: Language;
   lineLayout: LineLayoutType;
   showSeparators: boolean;
   pathLevels: 1 | 2 | 3;
+  terminalWidth?: number;
   elementOrder: HudElement[];
+  notifications: NotificationsConfig;
   gitStatus: {
     enabled: boolean;
     showDirty: boolean;
@@ -80,15 +90,12 @@ export interface HudConfig {
     showConfigCounts: boolean;
     showCost: boolean;
     showDuration: boolean;
-    showSpeed: boolean;
     showTokenBreakdown: boolean;
     showUsage: boolean;
     usageBarEnabled: boolean;
     showTools: boolean;
     showAgents: boolean;
     showTodos: boolean;
-    showSessionName: boolean;
-    showClaudeCodeVersion: boolean;
     showMemoryUsage: boolean;
     showSessionTokens: boolean;
     showOutputStyle: boolean;
@@ -104,11 +111,17 @@ export interface HudConfig {
 }
 
 export const DEFAULT_CONFIG: HudConfig = {
-  language: 'en',
   lineLayout: 'expanded',
   showSeparators: false,
   pathLevels: 1,
   elementOrder: [...DEFAULT_ELEMENT_ORDER],
+  notifications: {
+    enabled: false,
+    onUsageReset: true,
+    methods: ['notify-send', 'bell'],
+    minutesBefore: 0,
+    resumeCommand: '',
+  },
   gitStatus: {
     enabled: true,
     showDirty: true,
@@ -125,15 +138,12 @@ export const DEFAULT_CONFIG: HudConfig = {
     showConfigCounts: false,
     showCost: false,
     showDuration: false,
-    showSpeed: false,
     showTokenBreakdown: true,
     showUsage: true,
     usageBarEnabled: true,
     showTools: false,
     showAgents: false,
     showTodos: false,
-    showSessionName: false,
-    showClaudeCodeVersion: false,
     showMemoryUsage: false,
     showSessionTokens: false,
     showOutputStyle: false,
@@ -157,6 +167,7 @@ export const DEFAULT_CONFIG: HudConfig = {
     gitBranch: 'cyan',
     label: 'dim',
     custom: 208,
+    tools: 'cyan',
   },
 };
 
@@ -179,10 +190,6 @@ function validateAutocompactBuffer(value: unknown): value is AutocompactBufferMo
 
 function validateContextValue(value: unknown): value is ContextValueMode {
   return value === 'percent' || value === 'tokens' || value === 'remaining' || value === 'both';
-}
-
-function validateLanguage(value: unknown): value is Language {
-  return value === 'en' || value === 'zh';
 }
 
 function validateModelFormat(value: unknown): value is ModelFormatMode {
@@ -278,9 +285,6 @@ function validateCountThreshold(value: unknown): number {
 
 export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
   const migrated = migrateConfig(userConfig);
-  const language = validateLanguage(migrated.language)
-    ? migrated.language
-    : DEFAULT_CONFIG.language;
 
   const lineLayout = validateLineLayout(migrated.lineLayout)
     ? migrated.lineLayout
@@ -335,9 +339,6 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     showDuration: typeof migrated.display?.showDuration === 'boolean'
       ? migrated.display.showDuration
       : DEFAULT_CONFIG.display.showDuration,
-    showSpeed: typeof migrated.display?.showSpeed === 'boolean'
-      ? migrated.display.showSpeed
-      : DEFAULT_CONFIG.display.showSpeed,
     showTokenBreakdown: typeof migrated.display?.showTokenBreakdown === 'boolean'
       ? migrated.display.showTokenBreakdown
       : DEFAULT_CONFIG.display.showTokenBreakdown,
@@ -356,12 +357,6 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     showTodos: typeof migrated.display?.showTodos === 'boolean'
       ? migrated.display.showTodos
       : DEFAULT_CONFIG.display.showTodos,
-    showSessionName: typeof migrated.display?.showSessionName === 'boolean'
-      ? migrated.display.showSessionName
-      : DEFAULT_CONFIG.display.showSessionName,
-    showClaudeCodeVersion: typeof migrated.display?.showClaudeCodeVersion === 'boolean'
-      ? migrated.display.showClaudeCodeVersion
-      : DEFAULT_CONFIG.display.showClaudeCodeVersion,
     showMemoryUsage: typeof migrated.display?.showMemoryUsage === 'boolean'
       ? migrated.display.showMemoryUsage
       : DEFAULT_CONFIG.display.showMemoryUsage,
@@ -422,9 +417,25 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     custom: validateColorValue(migrated.colors?.custom)
       ? migrated.colors.custom
       : DEFAULT_CONFIG.colors.custom,
+    tools: validateColorValue(migrated.colors?.tools)
+      ? migrated.colors.tools
+      : DEFAULT_CONFIG.colors.tools,
   };
 
-  return { language, lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };
+  const terminalWidth = (typeof migrated.terminalWidth === 'number' && migrated.terminalWidth > 0)
+    ? migrated.terminalWidth
+    : undefined;
+
+  const n = (migrated as any).notifications ?? {};
+  const notifications: NotificationsConfig = {
+    enabled: typeof n.enabled === 'boolean' ? n.enabled : DEFAULT_CONFIG.notifications.enabled,
+    onUsageReset: typeof n.onUsageReset === 'boolean' ? n.onUsageReset : DEFAULT_CONFIG.notifications.onUsageReset,
+    methods: Array.isArray(n.methods) ? n.methods : DEFAULT_CONFIG.notifications.methods,
+    minutesBefore: typeof n.minutesBefore === 'number' ? n.minutesBefore : DEFAULT_CONFIG.notifications.minutesBefore,
+    resumeCommand: typeof n.resumeCommand === 'string' ? n.resumeCommand : DEFAULT_CONFIG.notifications.resumeCommand,
+  };
+
+  return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors, terminalWidth, notifications };
 }
 
 export async function loadConfig(): Promise<HudConfig> {

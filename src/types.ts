@@ -20,13 +20,6 @@ export interface StdinData {
     used_percentage?: number | null;
     remaining_percentage?: number | null;
   };
-  cost?: {
-    total_cost_usd?: number | null;
-    total_duration_ms?: number | null;
-    total_api_duration_ms?: number | null;
-    total_lines_added?: number | null;
-    total_lines_removed?: number | null;
-  } | null;
   rate_limits?: {
     five_hour?: {
       used_percentage?: number | null;
@@ -96,6 +89,7 @@ export interface TranscriptData {
   sessionStart?: Date;
   sessionName?: string;
   sessionTokens?: SessionTokenUsage;
+  modelUsage?: Record<string, SessionTokenUsage>;
 }
 
 export interface RenderContext {
@@ -106,11 +100,11 @@ export interface RenderContext {
   mcpCount: number;
   hooksCount: number;
   sessionDuration: string;
+  extraLabel: string | null;
   gitStatus: GitStatus | null;
   usageData: UsageData | null;
   memoryUsage: MemoryInfo | null;
   config: HudConfig;
-  extraLabel: string | null;
   outputStyle?: string;
-  claudeCodeVersion?: string;
+  terminalWidth: number;
 }

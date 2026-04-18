@@ -3,5 +3,5 @@ export { renderProjectLine, renderGitFilesLine } from './project.js';
 export { renderEnvironmentLine } from './environment.js';
 export { renderUsageLine } from './usage.js';
 export { renderMemoryLine } from './memory.js';
-export { renderSessionTokensLine } from './session-tokens.js';
+export { renderCostLine } from './cost.js';
 //# sourceMappingURL=index.js.map

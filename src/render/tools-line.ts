@@ -1,5 +1,5 @@
 import type { RenderContext } from '../types.js';
-import { yellow, green, cyan, label } from './colors.js';
+import { yellow, cyan, label, tools as toolsColor } from './colors.js';
 
 export function renderToolsLine(ctx: RenderContext): string | null {
   const { tools } = ctx.transcript;
@@ -29,24 +29,25 @@ export function renderToolsLine(ctx: RenderContext): string | null {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4);
 
+  const completedParts: string[] = [];
   for (const [name, count] of sortedTools) {
-    parts.push(`${green('✓')} ${name} ${label(`×${count}`, colors)}`);
+    completedParts.push(`${toolsColor(name, colors)}${label(`×${count}`, colors)}`);
+  }
+
+  if (completedParts.length > 0) {
+    parts.push(completedParts.join('  '));
   }
 
   if (parts.length === 0) {
     return null;
   }
 
-  return parts.join(' | ');
+  return parts.join('  ');
 }
 
 function truncatePath(path: string, maxLen: number = 20): string {
-  // Normalize Windows backslashes to forward slashes for consistent display
   const normalizedPath = path.replace(/\\/g, '/');
-
   if (normalizedPath.length <= maxLen) return normalizedPath;
-
-  // Split by forward slash (already normalized)
   const parts = normalizedPath.split('/');
   const filename = parts.pop() || normalizedPath;
 

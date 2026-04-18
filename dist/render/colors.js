@@ -77,6 +77,9 @@ export function project(text, colors) {
 export function git(text, colors) {
     return withOverride(text, colors?.git, MAGENTA);
 }
+export function tools(text, colors) {
+    return withOverride(text, colors?.tools, CYAN);
+}
 export function gitBranch(text, colors) {
     return withOverride(text, colors?.gitBranch, CYAN);
 }

@@ -2,7 +2,6 @@ import type { RenderContext } from "../../types.js";
 import { formatBytes } from "../../memory.js";
 import { label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
-import { t } from "../../i18n/index.js";
 
 export function renderMemoryLine(ctx: RenderContext): string | null {
   const display = ctx.config?.display;
@@ -20,12 +19,12 @@ export function renderMemoryLine(ctx: RenderContext): string | null {
     return null;
   }
 
-  const memoryLabel = label(t("label.approxRam"), colors);
+  const memoryLabel = label('Approx RAM', colors);
   const percentColor = getQuotaColor(ctx.memoryUsage.usedPercent, colors);
   const percent = `${percentColor}${ctx.memoryUsage.usedPercent}%${RESET}`;
   const bar = quotaBar(
     ctx.memoryUsage.usedPercent,
-    getAdaptiveBarWidth(),
+    getAdaptiveBarWidth(ctx.terminalWidth),
     colors,
   );
 

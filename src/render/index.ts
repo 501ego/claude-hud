@@ -12,14 +12,12 @@ import {
   renderEnvironmentLine,
   renderUsageLine,
   renderMemoryLine,
-  renderSessionTokensLine,
+  renderCostLine,
 } from './lines/index.js';
 import { dim, RESET } from './colors.js';
-import { UNKNOWN_TERMINAL_WIDTH } from '../utils/terminal.js';
+import { getTerminalWidth } from '../utils/terminal.js';
 
-// eslint-disable-next-line no-control-regex
 const ANSI_ESCAPE_PATTERN = /^(?:\x1b\[[0-9;]*m|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\))/;
-// eslint-disable-next-line no-control-regex
 const ANSI_ESCAPE_GLOBAL = /(?:\x1b\[[0-9;]*m|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\))/g;
 const GRAPHEME_SEGMENTER = typeof Intl.Segmenter === 'function'
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
@@ -27,27 +25,6 @@ const GRAPHEME_SEGMENTER = typeof Intl.Segmenter === 'function'
 
 function stripAnsi(str: string): string {
   return str.replace(ANSI_ESCAPE_GLOBAL, '');
-}
-
-function getTerminalWidth(): number {
-  const stdoutColumns = process.stdout?.columns;
-  if (typeof stdoutColumns === 'number' && Number.isFinite(stdoutColumns) && stdoutColumns > 0) {
-    return Math.floor(stdoutColumns);
-  }
-
-  // When running as a statusline subprocess, stdout is piped but stderr is
-  // still connected to the real terminal — use it to get the actual width.
-  const stderrColumns = process.stderr?.columns;
-  if (typeof stderrColumns === 'number' && Number.isFinite(stderrColumns) && stderrColumns > 0) {
-    return Math.floor(stderrColumns);
-  }
-
-  const envColumns = Number.parseInt(process.env.COLUMNS ?? '', 10);
-  if (Number.isFinite(envColumns) && envColumns > 0) {
-    return envColumns;
-  }
-
-  return UNKNOWN_TERMINAL_WIDTH;
 }
 
 function splitAnsiTokens(str: string): Array<{ type: 'ansi' | 'text'; value: string }> {
@@ -109,7 +86,6 @@ function graphemeWidth(grapheme: string): number {
     return 0;
   }
 
-  // Emoji glyphs and ZWJ sequences generally render as double-width.
   if (/\p{Extended_Pictographic}/u.test(grapheme)) {
     return 2;
   }
@@ -248,9 +224,6 @@ function splitWrapParts(line: string): Array<{ separator: string; segment: strin
     });
   }
 
-  // Keep the leading [model | provider] block together.
-  // This avoids splitting inside the model badge while still splitting
-  // separators elsewhere in the line.
   const firstVisible = stripAnsi(parts[0].segment).trimStart();
   const firstHasOpeningBracket = firstVisible.startsWith('[');
   const firstHasClosingBracket = stripAnsi(parts[0].segment).includes(']');
@@ -359,6 +332,8 @@ function renderElementLine(ctx: RenderContext, element: HudElement): string | nu
       return display?.showAgents === false ? null : renderAgentsLine(ctx);
     case 'todos':
       return display?.showTodos === false ? null : renderTodosLine(ctx);
+    case 'cost':
+      return display?.showCost === true ? renderCostLine(ctx) : null;
   }
 }
 
@@ -427,7 +402,6 @@ function renderExpanded(ctx: RenderContext, terminalWidth: number | null = null)
     });
   }
 
-  // Git files line always goes last (pass width so it can hide itself if too narrow)
   const gitFilesLine = renderGitFilesLine(ctx, terminalWidth);
   if (gitFilesLine) {
     lines.push({ line: gitFilesLine, isActivity: false });
@@ -439,21 +413,14 @@ function renderExpanded(ctx: RenderContext, terminalWidth: number | null = null)
 export function render(ctx: RenderContext): void {
   const lineLayout = ctx.config?.lineLayout ?? 'expanded';
   const showSeparators = ctx.config?.showSeparators ?? false;
-  const terminalWidth = getTerminalWidth();
+  ctx.terminalWidth = ctx.config?.terminalWidth ?? getTerminalWidth();
+  const terminalWidth = ctx.terminalWidth;
 
   let lines: string[];
 
   if (lineLayout === 'expanded') {
     const renderedLines = renderExpanded(ctx, terminalWidth);
     lines = renderedLines.map(({ line }) => line);
-
-    // Session token usage (cumulative)
-    if (ctx.config?.display?.showSessionTokens) {
-      const sessionTokensLine = renderSessionTokensLine(ctx);
-      if (sessionTokensLine) {
-        lines.push(sessionTokensLine);
-      }
-    }
 
     if (showSeparators) {
       const firstActivityIndex = renderedLines.findIndex(({ isActivity }) => isActivity);

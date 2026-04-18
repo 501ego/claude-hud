@@ -96,6 +96,10 @@ export function git(text: string, colors?: Partial<HudColorOverrides>): string {
   return withOverride(text, colors?.git, MAGENTA);
 }
 
+export function tools(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.tools, CYAN);
+}
+
 export function gitBranch(text: string, colors?: Partial<HudColorOverrides>): string {
   return withOverride(text, colors?.gitBranch, CYAN);
 }

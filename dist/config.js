@@ -11,14 +11,21 @@ export const DEFAULT_ELEMENT_ORDER = [
     'tools',
     'agents',
     'todos',
+    'cost',
 ];
 const KNOWN_ELEMENTS = new Set(DEFAULT_ELEMENT_ORDER);
 export const DEFAULT_CONFIG = {
-    language: 'en',
     lineLayout: 'expanded',
     showSeparators: false,
     pathLevels: 1,
     elementOrder: [...DEFAULT_ELEMENT_ORDER],
+    notifications: {
+        enabled: false,
+        onUsageReset: true,
+        methods: ['notify-send', 'bell'],
+        minutesBefore: 0,
+        resumeCommand: '',
+    },
     gitStatus: {
         enabled: true,
         showDirty: true,
@@ -35,15 +42,12 @@ export const DEFAULT_CONFIG = {
         showConfigCounts: false,
         showCost: false,
         showDuration: false,
-        showSpeed: false,
         showTokenBreakdown: true,
         showUsage: true,
         usageBarEnabled: true,
         showTools: false,
         showAgents: false,
         showTodos: false,
-        showSessionName: false,
-        showClaudeCodeVersion: false,
         showMemoryUsage: false,
         showSessionTokens: false,
         showOutputStyle: false,
@@ -67,6 +71,7 @@ export const DEFAULT_CONFIG = {
         gitBranch: 'cyan',
         label: 'dim',
         custom: 208,
+        tools: 'cyan',
     },
 };
 export function getConfigPath() {
@@ -84,9 +89,6 @@ function validateAutocompactBuffer(value) {
 }
 function validateContextValue(value) {
     return value === 'percent' || value === 'tokens' || value === 'remaining' || value === 'both';
-}
-function validateLanguage(value) {
-    return value === 'en' || value === 'zh';
 }
 function validateModelFormat(value) {
     return value === 'full' || value === 'compact' || value === 'short';
@@ -171,9 +173,6 @@ function validateCountThreshold(value) {
 }
 export function mergeConfig(userConfig) {
     const migrated = migrateConfig(userConfig);
-    const language = validateLanguage(migrated.language)
-        ? migrated.language
-        : DEFAULT_CONFIG.language;
     const lineLayout = validateLineLayout(migrated.lineLayout)
         ? migrated.lineLayout
         : DEFAULT_CONFIG.lineLayout;
@@ -222,9 +221,6 @@ export function mergeConfig(userConfig) {
         showDuration: typeof migrated.display?.showDuration === 'boolean'
             ? migrated.display.showDuration
             : DEFAULT_CONFIG.display.showDuration,
-        showSpeed: typeof migrated.display?.showSpeed === 'boolean'
-            ? migrated.display.showSpeed
-            : DEFAULT_CONFIG.display.showSpeed,
         showTokenBreakdown: typeof migrated.display?.showTokenBreakdown === 'boolean'
             ? migrated.display.showTokenBreakdown
             : DEFAULT_CONFIG.display.showTokenBreakdown,
@@ -243,12 +239,6 @@ export function mergeConfig(userConfig) {
         showTodos: typeof migrated.display?.showTodos === 'boolean'
             ? migrated.display.showTodos
             : DEFAULT_CONFIG.display.showTodos,
-        showSessionName: typeof migrated.display?.showSessionName === 'boolean'
-            ? migrated.display.showSessionName
-            : DEFAULT_CONFIG.display.showSessionName,
-        showClaudeCodeVersion: typeof migrated.display?.showClaudeCodeVersion === 'boolean'
-            ? migrated.display.showClaudeCodeVersion
-            : DEFAULT_CONFIG.display.showClaudeCodeVersion,
         showMemoryUsage: typeof migrated.display?.showMemoryUsage === 'boolean'
             ? migrated.display.showMemoryUsage
             : DEFAULT_CONFIG.display.showMemoryUsage,
@@ -308,8 +298,22 @@ export function mergeConfig(userConfig) {
         custom: validateColorValue(migrated.colors?.custom)
             ? migrated.colors.custom
             : DEFAULT_CONFIG.colors.custom,
+        tools: validateColorValue(migrated.colors?.tools)
+            ? migrated.colors.tools
+            : DEFAULT_CONFIG.colors.tools,
     };
-    return { language, lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };
+    const terminalWidth = (typeof migrated.terminalWidth === 'number' && migrated.terminalWidth > 0)
+        ? migrated.terminalWidth
+        : undefined;
+    const n = migrated.notifications ?? {};
+    const notifications = {
+        enabled: typeof n.enabled === 'boolean' ? n.enabled : DEFAULT_CONFIG.notifications.enabled,
+        onUsageReset: typeof n.onUsageReset === 'boolean' ? n.onUsageReset : DEFAULT_CONFIG.notifications.onUsageReset,
+        methods: Array.isArray(n.methods) ? n.methods : DEFAULT_CONFIG.notifications.methods,
+        minutesBefore: typeof n.minutesBefore === 'number' ? n.minutesBefore : DEFAULT_CONFIG.notifications.minutesBefore,
+        resumeCommand: typeof n.resumeCommand === 'string' ? n.resumeCommand : DEFAULT_CONFIG.notifications.resumeCommand,
+    };
+    return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors, terminalWidth, notifications };
 }
 export async function loadConfig() {
     const configPath = getConfigPath();
