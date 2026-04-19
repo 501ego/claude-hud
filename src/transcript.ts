@@ -6,11 +6,21 @@ import { createHash } from 'node:crypto';
 import { getHudPluginDir } from './claude-config-dir.js';
 import type { TranscriptData, ToolEntry, AgentEntry, TodoItem, SessionTokenUsage } from './types.js';
 
+interface TokenUsageIteration {
+  type?: string;
+  model?: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+}
+
 interface TokenUsage {
   input_tokens?: number;
   output_tokens?: number;
   cache_creation_input_tokens?: number;
   cache_read_input_tokens?: number;
+  iterations?: TokenUsageIteration[];
 }
 
 interface TranscriptLine {
@@ -244,18 +254,13 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
         }
         if (entry.type === 'assistant' && entry.message?.content) {
           for (const block of entry.message.content) {
-            if (block.type === 'tool_use' && block.id) {
-              // advisor tool uses Opus with no model param
-              if (block.name === 'advisor') {
-                agentToolModel.set(block.id, 'claude-opus-4-7');
-              } else if (block.name === 'Agent' && block.input?.model) {
-                const alias = String(block.input.model).toLowerCase();
-                const resolved = alias.includes('haiku') ? 'claude-haiku-4-5-20251001'
-                  : alias.includes('opus') ? 'claude-opus-4-7'
-                  : alias.includes('sonnet') ? 'claude-sonnet-4-6'
-                  : null;
-                if (resolved) agentToolModel.set(block.id, resolved);
-              }
+            if (block.type === 'tool_use' && block.id && block.name === 'Agent' && block.input?.model) {
+              const alias = String(block.input.model).toLowerCase();
+              const resolved = alias.includes('haiku') ? 'claude-haiku-4-5-20251001'
+                : alias.includes('opus') ? 'claude-opus-4-7'
+                : alias.includes('sonnet') ? 'claude-sonnet-4-6'
+                : null;
+              if (resolved) agentToolModel.set(block.id, resolved);
             }
           }
         }
@@ -278,6 +283,28 @@ export async function parseTranscript(transcriptPath: string): Promise<Transcrip
             modelUsage[modelId].outputTokens += out;
             modelUsage[modelId].cacheCreationTokens += cacheCreate;
             modelUsage[modelId].cacheReadTokens += cacheRead;
+          }
+          // advisor uses server_tool_use; Opus tokens live in usage.iterations
+          if (Array.isArray(usage.iterations)) {
+            for (const iter of usage.iterations) {
+              if (iter.type === 'advisor_message' && iter.model) {
+                const iInp = normalizeTokenCount(iter.input_tokens);
+                const iOut = normalizeTokenCount(iter.output_tokens);
+                const iCreate = normalizeTokenCount(iter.cache_creation_input_tokens);
+                const iRead = normalizeTokenCount(iter.cache_read_input_tokens);
+                if (!modelUsage[iter.model]) {
+                  modelUsage[iter.model] = { inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 };
+                }
+                modelUsage[iter.model].inputTokens += iInp;
+                modelUsage[iter.model].outputTokens += iOut;
+                modelUsage[iter.model].cacheCreationTokens += iCreate;
+                modelUsage[iter.model].cacheReadTokens += iRead;
+                sessionTokens.inputTokens += iInp;
+                sessionTokens.outputTokens += iOut;
+                sessionTokens.cacheCreationTokens += iCreate;
+                sessionTokens.cacheReadTokens += iRead;
+              }
+            }
           }
         }
         if (entry.type === 'user' && entry.toolUseResult?.usage && entry.message?.content) {
