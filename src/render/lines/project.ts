@@ -110,7 +110,12 @@ export function renderProjectLine(ctx: RenderContext): string | null {
         parts.push(modelColor(`[${currentDisplay}]`, colors));
       }
     } else {
-      parts.push(modelColor(`[${currentDisplay}]`, colors));
+      const nativeCost = ctx.stdin.cost?.total_cost_usd;
+      if (display?.showCost === true && typeof nativeCost === 'number' && nativeCost > 0) {
+        parts.push(modelColor(`[${currentDisplay}] ~$${nativeCost.toFixed(2)}`, colors));
+      } else {
+        parts.push(modelColor(`[${currentDisplay}]`, colors));
+      }
     }
   }
 

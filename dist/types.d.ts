@@ -18,6 +18,9 @@ export interface StdinData {
         used_percentage?: number | null;
         remaining_percentage?: number | null;
     };
+    cost?: {
+        total_cost_usd?: number | null;
+    } | null;
     rate_limits?: {
         five_hour?: {
             used_percentage?: number | null;
