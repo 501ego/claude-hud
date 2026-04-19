@@ -293,17 +293,18 @@ Claude HUD can fire a desktop notification + sound when your 5-hour or 7-day tok
 
 Ask the user if they'd like to set up usage-reset notifications.
 
-**If yes**, guide them through:
+**If yes**, run these steps automatically (do not ask the user to run them manually):
 
 1. Copy the notification script to `~/.claude/scripts/`:
    ```bash
-   mkdir -p ~/.claude/scripts
-   cp "$(ls -d ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/claude-hud/claude-hud/*/)/scripts/claude-notify.py" ~/.claude/scripts/claude-notify.py
+   mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts"
+   plugin_dir=$(ls -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/claude-hud/claude-hud/*/ 2>/dev/null | awk -F/ '{ print $(NF-1) "\t" $(0) }' | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n | tail -1 | cut -f2-)
+   cp "${plugin_dir}scripts/claude-notify.py" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/claude-notify.py"
    ```
 
-2. Add a cron job to run it every minute:
+2. Add a cron job (skip if already present):
    ```bash
-   (crontab -l 2>/dev/null; echo "* * * * * python3 $HOME/.claude/scripts/claude-notify.py") | crontab -
+   crontab -l 2>/dev/null | grep -q "claude-notify.py" || (crontab -l 2>/dev/null; echo "* * * * * python3 $HOME/.claude/scripts/claude-notify.py") | crontab -
    ```
 
 3. Enable notifications in `~/.claude/plugins/claude-hud/config.json`:
