@@ -220,18 +220,27 @@ Read the settings file and merge in the statusLine config, preserving all existi
 If the file doesn't exist, create it. If it contains invalid JSON, report the error and do not overwrite.
 If a write fails with `File has been unexpectedly modified`, re-read the file and retry the merge once.
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "{GENERATED_COMMAND}"
-  }
-}
+**CRITICAL — JSON safety**: The generated command contains single quotes, double quotes, and backslashes. You MUST use a Python one-liner to write the settings file — never use the Edit tool or string concatenation, as they will corrupt the JSON.
+
+Use this pattern to merge and write:
+
+```bash
+python3 << 'PYEOF'
+import json, os
+path = os.path.expandvars('${CLAUDE_CONFIG_DIR:-' + os.path.expanduser('~') + '/.claude}') + '/settings.json'
+try:
+    with open(path) as f:
+        data = json.load(f)
+except FileNotFoundError:
+    data = {}
+data['statusLine'] = {'type': 'command', 'command': r'GENERATED_COMMAND_PLACEHOLDER'}
+with open(path, 'w') as f:
+    json.dump(data, f, indent=2)
+print('written')
+PYEOF
 ```
 
-**JSON safety**: Write `settings.json` with a real JSON serializer or editor API, not manual string concatenation.
-If you must inspect the saved JSON manually, the embedded bash command must preserve escaped backslashes inside the awk fragment.
-For example, the saved JSON should contain `\\$(NF-1)` and `\\$0`, not `\$(NF-1)` and `\$0`.
+Replace `GENERATED_COMMAND_PLACEHOLDER` with the actual command string (use raw string `r'...'` or escape carefully). This guarantees valid JSON regardless of what the command contains.
 
 
 After successfully writing the config, tell the user:
