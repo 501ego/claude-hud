@@ -163,14 +163,20 @@ export async function parseTranscript(transcriptPath) {
                 }
                 if (entry.type === 'assistant' && entry.message?.content) {
                     for (const block of entry.message.content) {
-                        if (block.type === 'tool_use' && block.name === 'Agent' && block.id && block.input?.model) {
-                            const alias = String(block.input.model).toLowerCase();
-                            const resolved = alias.includes('haiku') ? 'claude-haiku-4-5'
-                                : alias.includes('opus') ? 'claude-opus-4-6'
-                                    : alias.includes('sonnet') ? 'claude-sonnet-4-6'
-                                        : null;
-                            if (resolved)
-                                agentToolModel.set(block.id, resolved);
+                        if (block.type === 'tool_use' && block.id) {
+                            // advisor tool uses Opus with no model param
+                            if (block.name === 'advisor') {
+                                agentToolModel.set(block.id, 'claude-opus-4-7');
+                            }
+                            else if (block.name === 'Agent' && block.input?.model) {
+                                const alias = String(block.input.model).toLowerCase();
+                                const resolved = alias.includes('haiku') ? 'claude-haiku-4-5-20251001'
+                                    : alias.includes('opus') ? 'claude-opus-4-7'
+                                        : alias.includes('sonnet') ? 'claude-sonnet-4-6'
+                                            : null;
+                                if (resolved)
+                                    agentToolModel.set(block.id, resolved);
+                            }
                         }
                     }
                 }
@@ -212,6 +218,10 @@ export async function parseTranscript(transcriptPath) {
                                 modelUsage[agentModel].outputTokens += out;
                                 modelUsage[agentModel].cacheCreationTokens += cacheCreate;
                                 modelUsage[agentModel].cacheReadTokens += cacheRead;
+                                sessionTokens.inputTokens += inp;
+                                sessionTokens.outputTokens += out;
+                                sessionTokens.cacheCreationTokens += cacheCreate;
+                                sessionTokens.cacheReadTokens += cacheRead;
                             }
                         }
                     }
