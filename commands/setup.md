@@ -203,6 +203,22 @@ Use the macOS/Linux bash command format above, but on Windows prefer `node` firs
 
 **WSL (Windows Subsystem for Linux)**: If running in WSL, use the macOS/Linux instructions. Ensure the plugin is installed in the Linux environment (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/...`), not the Windows side.
 
+After platform and runtime detection, detect the Python binary for use in later steps:
+
+```bash
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=$(command -v python3)
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=$(command -v python)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_BIN="py -3"
+else
+  echo "No python found — install Python 3 and re-run setup"; exit 1
+fi
+```
+
+`$PYTHON_BIN` is used in Steps 3 and 5 wherever Python is invoked.
+
 ## Step 2: Test Command
 
 Run the generated command. It should produce output (the HUD lines) within a few seconds.
@@ -225,7 +241,7 @@ If a write fails with `File has been unexpectedly modified`, re-read the file an
 Use this pattern to merge and write:
 
 ```bash
-python3 << 'PYEOF'
+$PYTHON_BIN << 'PYEOF'
 import json, os
 path = os.path.expandvars('${CLAUDE_CONFIG_DIR:-' + os.path.expanduser('~') + '/.claude}') + '/settings.json'
 try:
@@ -302,21 +318,46 @@ Ask the user if they'd like to set up usage-reset notifications.
    cp "${plugin_dir}scripts/claude-notify.py" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/claude-notify.py"
    ```
 
-2. Add a cron job (skip if already present):
+2. Add a cron job (skip if already present). On Linux/macOS use crontab; on Windows use PowerShell Task Scheduler:
    ```bash
-   crontab -l 2>/dev/null | grep -q "claude-notify.py" || (crontab -l 2>/dev/null; echo "* * * * * python3 $HOME/.claude/scripts/claude-notify.py") | crontab -
+   if [ "$PLATFORM" != "win32" ]; then
+     crontab -l 2>/dev/null | grep -q "claude-notify.py" || (crontab -l 2>/dev/null; echo "* * * * * $PYTHON_BIN $HOME/.claude/scripts/claude-notify.py") | crontab -
+   else
+     echo "# Windows: run in PowerShell as Administrator to schedule claude-notify.py every minute:"
+     echo '# $action = New-ScheduledTaskAction -Execute "python" -Argument "$env:USERPROFILE\.claude\scripts\claude-notify.py"'
+     echo '# $trigger = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Minutes 1) -Once -At (Get-Date)'
+     echo '# Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "ClaudeHudNotify" -RunLevel Highest'
+   fi
    ```
 
-3. Enable notifications in `~/.claude/plugins/claude-hud/config.json`:
-   ```json
-   {
-     "notifications": {
-       "enabled": true,
-       "onUsageReset": true,
-       "methods": ["notify-send", "bell"],
-       "minutesBefore": 0
-     }
-   }
+3. Enable notifications in `~/.claude/plugins/claude-hud/config.json`. The `methods` list is platform-dependent:
+   ```bash
+   if [ "$PLATFORM" = "linux" ]; then
+     NOTIFY_METHODS='["notify-send","bell"]'
+   elif [ "$PLATFORM" = "win32" ]; then
+     NOTIFY_METHODS='["bell"]'
+   else
+     NOTIFY_METHODS='[]'
+   fi
+   ```
+   Write the config using `$PYTHON_BIN`:
+   ```bash
+   $PYTHON_BIN << PYEOF
+   import json, os
+   path = os.path.join(os.path.expanduser("~"), ".claude", "plugins", "claude-hud", "config.json")
+   os.makedirs(os.path.dirname(path), exist_ok=True)
+   try:
+       with open(path) as f:
+           data = json.load(f)
+   except FileNotFoundError:
+       data = {}
+   import sys
+   methods = json.loads(os.environ.get("NOTIFY_METHODS", '["notify-send","bell"]'))
+   data.setdefault("notifications", {}).update({"enabled": True, "onUsageReset": True, "methods": methods, "minutesBefore": 0})
+   with open(path, "w") as f:
+       json.dump(data, f, indent=2)
+   print("written")
+   PYEOF
    ```
 
 **Platform notes:**
