@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+File give guidance to Claude Code for this repo.
 
 ## Project Overview
 
-Claude HUD is a Claude Code plugin that displays a real-time multi-line statusline. It shows context health, tool activity, agent status, and todo progress.
+Claude HUD = Claude Code plugin. Show real-time multi-line statusline. Context health, tool activity, agent status, todo progress.
 
 ## Build Commands
 
@@ -25,11 +25,11 @@ Claude Code → stdin JSON → parse → render lines → stdout → Claude Code
            ↘ transcript_path → parse JSONL → tools/agents/todos
 ```
 
-**Key insight**: The statusline is invoked every ~300ms by Claude Code. Each invocation:
-1. Receives JSON via stdin (model, context, tokens - native accurate data)
-2. Parses the transcript JSONL file for tools, agents, and todos
-3. Renders multi-line output to stdout
-4. Claude Code displays all lines
+**Key insight**: Statusline invoke every ~300ms. Each call:
+1. Get JSON via stdin (model, context, tokens — native accurate)
+2. Parse transcript JSONL for tools, agents, todos
+3. Render multi-line to stdout
+4. Claude Code display all lines
 
 ### Data Sources
 
@@ -52,10 +52,10 @@ Claude Code → stdin JSON → parse → render lines → stdout → Claude Code
 - Rules count from CLAUDE.md files
 
 **From Claude Code stdin rate limits**:
-- `rate_limits.five_hour.used_percentage` - 5-hour subscriber usage percentage
-- `rate_limits.five_hour.resets_at` - 5-hour reset timestamp
-- `rate_limits.seven_day.used_percentage` - 7-day subscriber usage percentage
-- `rate_limits.seven_day.resets_at` - 7-day reset timestamp
+- `rate_limits.five_hour.used_percentage` - 5-hour usage %
+- `rate_limits.five_hour.resets_at` - 5-hour reset time
+- `rate_limits.seven_day.used_percentage` - 7-day usage %
+- `rate_limits.seven_day.resets_at` - 7-day reset time
 
 ### File Structure
 
@@ -90,7 +90,7 @@ src/
 Context █████░░░░░ 45% │ Usage ██░░░░░░░░ 25% (1h 30m / 5h)
 ```
 
-Lines 1-2 always shown. Additional lines are opt-in via config:
+Line 1-2 always show. More line opt-in via config:
 - Tools line (`showTools`): ◐ Edit: auth.ts | ✓ Read ×3
 - Agents line (`showAgents`): ◐ explore [haiku]: Finding auth code
 - Todos line (`showTodos`): ▸ Fix authentication bug (2/5)
@@ -106,13 +106,13 @@ Lines 1-2 always shown. Additional lines are opt-in via config:
 
 ## Plugin Configuration
 
-The plugin manifest is in `.claude-plugin/plugin.json` (metadata only - name, description, version, author).
+Plugin manifest in `.claude-plugin/plugin.json` (metadata only — name, description, version, author).
 
-**StatusLine configuration** must be added to the user's `~/.claude/settings.json` via `/claude-hud:setup`.
+**StatusLine config** go in user `~/.claude/settings.json` via `/claude-hud:setup`.
 
-The setup command adds an auto-updating command that finds the latest installed version at runtime.
+Setup add auto-updating command. Find latest installed version at runtime.
 
-Note: `statusLine` is NOT a valid plugin.json field. It must be configured in settings.json after plugin installation. Updates are automatic - no need to re-run setup.
+Note: `statusLine` NOT valid plugin.json field. Must configure in settings.json after install. Updates automatic — no re-run setup needed.
 
 ## Dependencies
 

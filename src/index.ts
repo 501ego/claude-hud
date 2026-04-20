@@ -24,6 +24,59 @@ export type MainDeps = {
 };
 
 export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
+  if (process.argv.includes("--test")) {
+    const mockStdin = {
+      model: { display_name: "Sonnet" },
+      context_window: {
+        context_window_size: 200000,
+        current_usage: { input_tokens: 10000 },
+      },
+    };
+    try {
+      const testDeps: MainDeps = {
+        readStdin,
+        getUsageFromStdin,
+        parseTranscript,
+        countConfigs,
+        getGitStatus,
+        loadConfig,
+        getMemoryUsage,
+        render,
+        now: () => Date.now(),
+        log: console.log,
+        ...overrides,
+        readStdin: async () => mockStdin,
+      };
+      const config = await testDeps.loadConfig();
+      const transcript = await testDeps.parseTranscript("");
+      const { claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle } =
+        await testDeps.countConfigs(undefined);
+      const ctx: RenderContext = {
+        stdin: mockStdin,
+        transcript,
+        claudeMdCount,
+        rulesCount,
+        mcpCount,
+        hooksCount,
+        sessionDuration: "0m",
+        extraLabel: null,
+        gitStatus: null,
+        usageData: null,
+        memoryUsage: null,
+        config,
+        outputStyle,
+        terminalWidth: 0,
+      };
+      testDeps.render(ctx);
+      process.exit(0);
+    } catch (error) {
+      process.stderr.write(
+        `[claude-hud --test] Error: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      process.exit(1);
+    }
+  }
+
   const deps: MainDeps = {
     readStdin,
     getUsageFromStdin,

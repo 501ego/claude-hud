@@ -117,6 +117,10 @@ def parse_iso(s) -> datetime | None:
 
 
 def main() -> None:
+    if "--test" in sys.argv:
+        fire(["notify-send", "bell"], "claude-hud test notification", "If you see this, notifications are working.")
+        sys.exit(0)
+
     state = load_json(STATE_FILE)
     if not state:
         return
