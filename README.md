@@ -1,4 +1,3 @@
-> **Fork Notice:** This is a personal fork of [jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud) by [501ego](https://github.com/501ego), with custom features and a curated setup.
 
 # Claude HUD
 
@@ -243,7 +242,7 @@ echo '{"model":{"display_name":"Opus"},"context_window":{"current_usage":{"input
 
 ## Credits
 
-Originally created by [Jarrod Watts](https://github.com/jarrodwatts) — [jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud).
+Maintained by [Diego (501ego)](https://github.com/501ego). Based on the original [claude-hud](https://github.com/jarrodwatts/claude-hud) by Jarrod Watts.
 
 ---
 
