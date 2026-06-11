@@ -1,0 +1,7 @@
+#!/bin/sh
+# Pet the claude-hud pet: refreshes the touch file's mtime so the next
+# statusline render shows the kawaii reaction for a few seconds.
+dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/claude-hud"
+mkdir -p "$dir"
+touch "$dir/pet-touch"
+echo "purr~"

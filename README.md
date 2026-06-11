@@ -74,6 +74,24 @@ Context █████░░░░░ 45% │ Usage ██░░░░░░░
 $0.42                                          ← Session cost
 ```
 
+### HUD Pet (on by default)
+
+An animated pixel-art pet lives beside the HUD. It patrols while you're idle,
+watches Claude work, and reacts to real session telemetry: context pressure,
+token burn speed, quota alerts, tool errors, completed todos. It speaks —
+short utterances beside its head, alert messages below it (`5h almost out!`,
+`burning fast!`, `context full!`) — and levels up with lifetime token usage:
+egg → kitten (2M) → adult (50M) → legend (800M).
+
+- Two styles: `cat` (british shorthair, default) and `claude` (Clawd, the
+  terracotta CLI mascot) — `pet.style` in config.json.
+- Pet it with `/claude-hud:pet` (or the optional `pet` terminal command) for
+  a kawaii reaction.
+- Rendered as 24x6-px truecolor quadrant pixel art in a 12x3-cell strip;
+  auto-hides below 80 columns. Disable with `pet.enabled: false`.
+- Idle animation requires `statusLine.refreshInterval: 1` in settings.json
+  (`/claude-hud:setup` configures it).
+
 ---
 
 ## Configuration
@@ -107,7 +125,7 @@ Or edit `~/.claude/plugins/claude-hud/config.json` directly.
 | `display.usageBarEnabled` | boolean | true | Usage as visual bar |
 | `display.sevenDayThreshold` | 0-100 | 80 | Show 7-day usage when >= threshold |
 | `display.showTokenBreakdown` | boolean | true | Token details at high context (85%+) |
-| `display.showCost` | boolean | false | Show session cost |
+| `display.showCost` | boolean | true | Show session cost (inline on project line; estimate includes cache-write tokens) |
 | `display.showTools` | boolean | false | Tools activity line |
 | `display.showAgents` | boolean | false | Agents activity line |
 | `display.showTodos` | boolean | false | Todos progress line |
@@ -120,7 +138,7 @@ Or edit `~/.claude/plugins/claude-hud/config.json` directly.
 | `notifications.minutesBefore` | number | 0 | Alert N minutes before reset |
 | `colors.*` | color value | see defaults | Named, 256-index, or `#rrggbb` |
 
-**Default element order:** `["project","context","usage","tools","agents","todos","environment","cost"]`
+**Default element order:** `["project","context","usage","tools","agents","todos","environment"]`
 
 **Color keys:** `model`, `project`, `git`, `gitBranch`, `context`, `usage`, `warning`, `usageWarning`, `critical`, `label`, `tools`, `custom`
 
@@ -133,7 +151,7 @@ Or edit `~/.claude/plugins/claude-hud/config.json` directly.
   "lineLayout": "expanded",
   "terminalWidth": 200,
   "pathLevels": 2,
-  "elementOrder": ["project", "context", "usage", "tools", "agents", "todos", "environment", "cost"],
+  "elementOrder": ["project", "context", "usage", "tools", "agents", "todos", "environment"],
   "notifications": {
     "enabled": true,
     "onUsageReset": true,
