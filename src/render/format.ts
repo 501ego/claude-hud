@@ -86,7 +86,7 @@ export function formatUsageWindowPart({
   const reset = formatResetTime(resetAt);
   const styledLabel = label(windowLabel, colors);
 
-  const resetGlyph = reset ? ` ↺${reset.replace(/\s+/g, '')}` : '';
+  const resetGlyph = reset ? ` ↺ ${reset.replace(/\s+/g, '')}` : '';
 
   if (usageBarEnabled) {
     const body = `${quotaBrailleBar(percent ?? 0, barWidth, colors)} ${usageDisplay}${resetGlyph}`;
