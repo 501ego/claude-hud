@@ -11,12 +11,24 @@ import type { PetLevel, PetStateName } from '../state/pet-state.js';
 export declare const PET_SPRITE_WIDTH = 12;
 export declare const PET_MIN_AREA: number;
 export type PetStyleName = 'cat' | 'claude';
+export interface PetMotion {
+    offset: number;
+    mirrored: boolean;
+    atMs: number;
+}
+/**
+ * Smooth motion between renders: instead of teleporting to the state's
+ * target offset, glide toward it at most one column per GLIDE_STEP_MS of
+ * elapsed time, facing the direction of travel. `prev` is the persisted
+ * position from the previous render; stale/missing history snaps to target.
+ */
+export declare function resolvePetMotion(state: PetStateName, level: PetLevel, now: number, areaWidth: number, align?: 'left' | 'right', prev?: PetMotion | null): PetMotion;
 /**
  * Render the pet inside an `areaWidth`-wide strip (>= PET_MIN_AREA).
- * Returns 3 sprite rows — plus a 4th speech row when the current message
- * is too long to sit beside the head. Every row is exactly `areaWidth`
- * visible columns.
+ * Returns 3 sprite rows — plus a speech row directly below the sprite when
+ * the current message is too long to sit beside the head. Every row is
+ * exactly `areaWidth` visible columns.
  */
-export declare function renderPetArea(state: PetStateName, level: PetLevel, now: number, areaWidth: number, align?: 'left' | 'right', styleName?: PetStyleName): string[];
+export declare function renderPetArea(state: PetStateName, level: PetLevel, now: number, areaWidth: number, align?: 'left' | 'right', styleName?: PetStyleName, runningTool?: string | null, alert?: PetStateName | null, motion?: PetMotion | null): string[];
 export declare function petBlankRow(areaWidth: number): string;
 //# sourceMappingURL=pet.d.ts.map

@@ -25,8 +25,8 @@ const PALETTE: Record<string, Rgb> = {
   E: [108, 150, 228], // blue eyes (light)
   W: [255, 255, 255], // eye highlight
   M: [84, 90, 110],   // mouth
-  A: [138, 148, 170], // stressed body = normal coat (message carries the alert)
-  a: [184, 193, 214], // stressed face = normal coat
+  A: [240, 180, 80],  // amber — alert speech accent only (coat stays normal)
+  H: [242, 125, 60],  // hot orange — alert speech accent only
   R: [240, 112, 144], // red (panic outline)
   r: [250, 150, 170], // red-ish body (panic)
   C: [130, 205, 245], // cyan (sweat / tear)
@@ -81,16 +81,40 @@ const SPRITES: Record<SpriteKey, string[]> = {
     '............',
     '.KK......KK.',
     '.KBFFFFFFBK.',
-    'zKFEFFFFEFKK',
-    '.KFEFFFFEFKK',
+    'zKFFFFFFFFKK',
+    '.KFEEFFEEFKK',
     '..KFFMMFFK..',
   ],
-  curious: [
-    '..K.......K.',
+  thinking: [
+    '..K......K..',
+    '.KIK....KIK.',
+    '.KBFFFFFFBK.',
+    'zKEWFFEWFFKK',
+    '.KEEFFEEFFKK',
+    '..KFFMMFFK..',
+  ],
+  cheering: [
+    'G.K......K.G',
     '.KIK....KIK.',
     '.KBFFFFFFBK.',
     'zKFEWFFEWFKK',
-    '.KFWEFFWEFKK',
+    '.KFEEFFEEFKK',
+    '..KFFMMFFK..',
+  ],
+  waiting: [
+    '..K......K..',
+    '.KIK....KIK.',
+    '.KBFFFFFFBK.',
+    'zKFEWFFEWFKK',
+    '.KFEEFFEEFKK',
+    '..KFFMMFFK..',
+  ],
+  bored: [
+    '..K......K..',
+    '.KIK....KIK.',
+    '.KBFFFFFFBK.',
+    'zKFEEFFEEFKK',
+    '.KFEEFFEEFKK',
     '..KFFMMFFK..',
   ],
   sleeping: [
@@ -112,26 +136,26 @@ const SPRITES: Record<SpriteKey, string[]> = {
   stressed: [
     '..K......K..',
     '.KIK....KIKC',
-    '.KAaaaaaaAK.',
-    'zKaEEaaEEaKK',
-    '.KaEEaaEEaKK',
-    '..KaaMMaaK..',
+    '.KBFFFFFFBK.',
+    'zKFEEFFEEFKC',
+    '.KFEEFFEEFKK',
+    '..KFFMMFFK..',
   ],
   burning: [
-    '..K......K..',
+    '..K.R....K..',
     '.KIK....KIKC',
-    '.KAaaaaaaAK.',
-    'zKaEEaaEEaKC',
-    '.KaEEaaEEaKK',
-    '..KaaMMaaK..',
+    '.KBFFFFFFBK.',
+    'zKFEEFFEEFKC',
+    '.KFEEFFEEFKK',
+    '..KFFMMFFK..',
   ],
   panic: [
-    '..R......R..',
-    '.RIR....RIR.',
-    '.RrrrrrrrrRR',
-    'zRrWWrrWWrRR',
-    '.RrWWrrWWrRR',
-    '..RrrMMrrR..',
+    '..K......K..',
+    '.KIK....KIK.',
+    '.KBFFFFFFBKK',
+    'zKFWWFFWWFKK',
+    '.KFWWFFWWFKK',
+    '..KFFMMFFK..',
   ],
   error: [
     '............',
@@ -152,10 +176,10 @@ const SPRITES: Record<SpriteKey, string[]> = {
   melted: [
     '............',
     '............',
-    '............',
-    '..Z......Z..',
-    '.ZzzzzzzzzZ.',
-    'ZzzEEzzEEzzZ',
+    '.....B......',
+    '..K......K..',
+    '.KBBBBBBBBK.',
+    'KBBEEBBEEBBK',
   ],
   startled: [
     '..K......K..',
@@ -252,16 +276,40 @@ const ALT_FRAMES: Partial<Record<SpriteKey, string[]>> = {
     '............',
     '.KK......KK.',
     '.KBFFFFFFBKK',
-    'zKFEFFFFEFKK',
-    '.KFEFFFFEFK.',
+    'zKFFFFFFFFKK',
+    '.KFEEFFEEFK.',
     '..KFFMMFFK..',
   ],
-  curious: [
+  thinking: [
     '..K......K..',
     '.KIK....KIK.',
+    '.KBFFFFFFBKK',
+    'zKFFEWFFEWKK',
+    '.KFFEEFFEEK.',
+    '..KFFMMFFK..',
+  ],
+  cheering: [
+    '..K..GG..K..',
+    'GKIK....KIKG',
+    '.KBFFFFFFBKK',
+    'zKFWWFFWWFKK',
+    '.KFEEFFEEFK.',
+    '..KFFMMFFK..',
+  ],
+  waiting: [
+    '..K......K..',
+    '.KIK....KIKK',
     '.KBFFFFFFBK.',
     'zKFEWFFEWFKK',
-    '.KFWEFFWEFKK',
+    '.KFEEFFEEFK.',
+    '..KFFMMFFK..',
+  ],
+  bored: [
+    '..K......K..',
+    '.KIK....KIK.',
+    '.KBFFFFFFBKK',
+    'zKFMMFFMMFKK',
+    '.KFFMMMMFFK.',
     '..KFFMMFFK..',
   ],
   sleeping: [
@@ -283,18 +331,18 @@ const ALT_FRAMES: Partial<Record<SpriteKey, string[]>> = {
   stressed: [
     '..K......K..',
     '.KIK....KIK.',
-    '.KAaaaaaaAKC',
-    'zKaEEaaEEaKK',
-    '.KaEEaaEEaKK',
-    '..KaaMMaaK..',
+    '.KBFFFFFFBKC',
+    'zKFEEFFEEFKK',
+    '.KFEEFFEEFKC',
+    '..KFMMMMFK..',
   ],
   burning: [
-    '..K......K..',
+    '..K....R.K..',
     '.KIK....KIK.',
-    '.KAaaaaaaAKC',
-    'zKaEEaaEEaKK',
-    '.KaEEaaEEaKC',
-    '..KaaMMaaK..',
+    '.KBFFFFFFBKC',
+    'zKFEEFFEEFKK',
+    '.KFEEFFEEFKC',
+    '..KFFMMFFK..',
   ],
   dizzy: [
     '..K......K..',
@@ -316,9 +364,9 @@ const ALT_FRAMES: Partial<Record<SpriteKey, string[]>> = {
     '............',
     '............',
     '............',
-    '..Z......Z.z',
-    '.ZzzzzzzzzZ.',
-    'ZzzzEzzzEzzZ',
+    '..K..B...K.B',
+    '.KBBBBBBBBK.',
+    'KBBEEBBEEBBK',
   ],
   egg: [
     '............',
@@ -329,12 +377,12 @@ const ALT_FRAMES: Partial<Record<SpriteKey, string[]>> = {
     '....KOOOOK..',
   ],
   panic: [
-    '..R......R..',
-    '.RIR.RR.RIR.',
-    '.RrrrrrrrrRR',
-    'zRrWWrrWWrRR',
-    '.RrWWrrWWrR.',
-    '..RrrMMrrR..',
+    '..K......K..',
+    '.KIK.KK.KIK.',
+    '.KBFFFFFFBKK',
+    'zKFWWFFWWFKK',
+    '.KFWWFFWWFK.',
+    '..KFMMMMFK..',
   ],
   startled: [
     '..K......K..',
@@ -416,23 +464,47 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
   ],
   focused: [
     '......oooooooooooo......',
-    '......ommoooooommo......',
+    '......oomoooooomoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
     '........................',
   ],
-  curious: [
-    '......ooeooooooooo......',
-    '......oooooooooeoo......',
+  thinking: [
+    '......oooooooooooo......',
+    '......oeooooooeooo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
+    '.......o.o....o.o.......',
+    '........................',
+  ],
+  cheering: [
+    '..G...oooooooooooo...G..',
+    '......ooeooooooeoo......',
+    '....oooooooooooooooo....',
+    '......oooooooooooo......',
+    '.......o.o....o.o.......',
+    '........................',
+  ],
+  waiting: [
+    '......oooooooooooo......',
+    '......ooeooooooeoo......',
+    '....oooooooooooooooo....',
+    '......oooooooooooo......',
+    '.......o.o....o.o.......',
+    '........................',
+  ],
+  bored: [
+    '......oooooooooooo......',
+    '......ooeooooooeoo......',
+    '....oooooooooooooooo....',
+    '......oooooommoooo......',
     '.......o.o....o.o.......',
     '........................',
   ],
   sleeping: [
     '......oooooooooooo....z.',
-    '......ommoooooommo......',
+    '......oomoooooomoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -449,13 +521,13 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
   stressed: [
     '......oooooooooooo....C.',
     '......ooeooooooeoo......',
-    '....oooooooooooooooo....',
+    '....oooooooooooooooo..C.',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
     '........................',
   ],
   burning: [
-    '......oooooooooooo....C.',
+    '...R..oooooooooooo......',
     '......ooeooooooeoo......',
     '....oooooooooooooooo..C.',
     '......oooooooooooo......',
@@ -463,16 +535,16 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
     '........................',
   ],
   panic: [
-    '......RRRRRRRRRRRR......',
-    '......RWWRRRRRRWWR......',
-    '....RRRRRRRRRRRRRRRR....',
-    '......RRRRRRRRRRRR......',
-    '.......R.R....R.R.......',
+    '......oooooooooooo......',
+    '......ooWooooooWoo......',
+    '....oooooooooooooooo....',
+    '......oooooooooooo......',
+    '.......o.o....o.o.......',
     '........................',
   ],
   error: [
     '......oooooooooooo......',
-    '......ooeooooommmo......',
+    '......ooeoooooomoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -480,7 +552,7 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
   ],
   dizzy: [
     '......oooooooooooo......',
-    '......oWeooooooeWo......',
+    '......ooWooooooeoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -496,7 +568,7 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
   ],
   startled: [
     '......oooooooooooo......',
-    '......ooWWooooWWoo......',
+    '......ooWooooooWoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -520,7 +592,7 @@ const CLAUDE_SPRITES: Record<SpriteKey, string[]> = {
   ],
   levelup: [
     'G.....oooooooooooo.....G',
-    '......oWWooooooWWo......',
+    '......ooWooooooWoo......',
     '..G.oooooooooooooooo.G..',
     '......oooommmmoooo......',
     '.G.....o.o....o.o.....G.',
@@ -585,17 +657,41 @@ const CLAUDE_ALTS: Partial<Record<SpriteKey, string[]>> = {
     '.......o.o....o.o.......',
     '........................',
   ],
-  curious: [
-    '......oooooooooeoo......',
-    '......ooeooooooooo......',
+  thinking: [
+    '......oooooooooooo......',
+    '......oooeooooooeo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
     '........................',
   ],
+  cheering: [
+    '........................',
+    '..G...oooooooooooo...G..',
+    '......ooWooooooWoo......',
+    '....oooooooooooooooo....',
+    '......o.o......o.o......',
+    '........................',
+  ],
+  waiting: [
+    '......oooooooooooo......',
+    '......ooeooooooeoo......',
+    '....oooooooooooooooo....',
+    '......oooooooooooo......',
+    '......o.o......o.o......',
+    '........................',
+  ],
+  bored: [
+    '......oooooooooooo......',
+    '......oomoooooomoo......',
+    '....oooooommmmoooooo....',
+    '......oooommmmoooo......',
+    '.......o.o....o.o.......',
+    '........................',
+  ],
   sleeping: [
     '......oooooooooooo..z...',
-    '......ommoooooommo......',
+    '......oomoooooomoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -613,29 +709,29 @@ const CLAUDE_ALTS: Partial<Record<SpriteKey, string[]>> = {
     '......oooooooooooo......',
     '......ooeooooooeoo......',
     '....oooooooooooooooo..C.',
-    '......oooooooooooo......',
+    '......oooommoooooo......',
     '.......o.o....o.o.......',
     '........................',
   ],
   burning: [
-    '......oooooooooooo..C...',
+    '......oooooooooooo..R...',
     '......ooeooooooeoo......',
-    '....oooooooooooooooo..C.',
-    '......oooooooooooo......',
+    '....oooooooooooooooo....',
+    '......oooooooooooo...C..',
     '.......o.o....o.o.......',
     '........................',
   ],
   panic: [
-    '......RRRRRRRRRRRR......',
-    '......RRRRRRRRRRRR......',
-    '....RRRRRRRRRRRRRRRR....',
-    '......RRRRRRRRRRRR......',
-    '.......R.R....R.R.......',
+    '......oooooooooooo......',
+    '......ooWooooooWoo......',
+    '....oooooWWWWooooooo....',
+    '......oooooooooooo......',
+    '.......o.o....o.o.......',
     '........................',
   ],
   dizzy: [
     '......oooooooooooo......',
-    '......oeWoooooWeoo......',
+    '......ooeooooooWoo......',
     '....oooooooooooooooo....',
     '......oooooooooooo......',
     '.......o.o....o.o.......',
@@ -667,7 +763,7 @@ const CLAUDE_ALTS: Partial<Record<SpriteKey, string[]>> = {
   ],
   levelup: [
     '.G....oooooooooooo....G.',
-    '......oWWooooooWWo......',
+    '......ooWooooooWoo......',
     '.G..oooooooooooooooo..G.',
     '......oooommmmoooo......',
     'G......o.o....o.o......G',
@@ -684,8 +780,8 @@ const CLAUDE_ALTS: Partial<Record<SpriteKey, string[]>> = {
   melted: [
     '........................',
     '........................',
+    '.........o..............',
     '........................',
-    '..................W.....',
     '......oooooooooooo......',
     '....ooooeoooooooeooo....',
   ],
@@ -751,15 +847,17 @@ const RESET = '\x1b[0m';
 const fgAnsi = ([r, g, b]: Rgb): string => `\x1b[38;2;${r};${g};${b}m`;
 const bgAnsi = ([r, g, b]: Rgb): string => `\x1b[48;2;${r};${g};${b}m`;
 
-const WALKING = new Set<PetStateName>(['calm', 'curious']);
-const JITTER = new Set<PetStateName>(['panic', 'startled']);
+const WALKING = new Set<PetStateName>(['calm', 'thinking']);
+const JITTER = new Set<PetStateName>(['panic', 'startled', 'burning']);
 
 const SPEECH: Partial<Record<PetStateName, string>> = {
   egg: '...',
-  calm: ':3',
-  curious: 'hi!',
+  calm: '♪',
+  thinking: 'hmm...',
   working: 'working...',
   focused: 'focused...',
+  cheering: 'go go!',
+  bored: 'meh...',
   sleeping: 'zzz',
   eating: 'yum!',
   stressed: 'context full!',
@@ -778,17 +876,57 @@ const SPEECH: Partial<Record<PetStateName, string>> = {
 const SPEECH_COLOR: Partial<Record<PetStateName, Rgb>> = {
   panic: PALETTE.R,
   melted: PALETTE.R,
+  stressed: PALETTE.A,
+  burning: PALETTE.H,
   levelup: PALETTE.G,
+  cheering: PALETTE.G,
   kawaii: PALETTE.P,
 };
 const SPEECH_MUTED: Rgb = [150, 155, 168];
 const SPEECH_BESIDE_MAX = 6;
 
-function speechFor(state: PetStateName, now: number): string | null {
+const TOOL_SPEECH: Array<[RegExp, string]> = [
+  [/^(Read|Grep|Glob|NotebookRead)$/, 'reading...'],
+  [/^(Edit|Write|MultiEdit|NotebookEdit)$/, 'editing...'],
+  [/^(Bash|PowerShell)$/, 'running...'],
+  [/^(WebFetch|WebSearch)$/, 'browsing...'],
+  [/^(Task|Agent)$/, 'delegating...'],
+  [/^TodoWrite$/, 'planning...'],
+];
+
+const SPEECH_TICK_MS = 600;
+const HUM_FRAMES = ['♪ ', '♫ ', '♪♫'];
+
+/**
+ * Liven up ongoing-action speech: trailing '...' and 'zzz' grow one glyph
+ * per tick, and the calm hum cycles melody notes — everything space-padded
+ * to a constant length so the layout never shifts.
+ */
+function animateSpeech(text: string, now: number): string {
+  const n = 1 + (Math.floor(now / SPEECH_TICK_MS) % 3);
+  if (text.endsWith('...')) {
+    return `${text.slice(0, -3)}${'.'.repeat(n)}${' '.repeat(3 - n)}`;
+  }
+  if (text === 'zzz') {
+    return `${'z'.repeat(n)}${' '.repeat(3 - n)}`;
+  }
+  if (text === '♪') {
+    return HUM_FRAMES[Math.floor(now / SPEECH_TICK_MS) % HUM_FRAMES.length];
+  }
+  return text;
+}
+
+function speechFor(state: PetStateName, now: number, runningTool?: string | null): string | null {
+  if ((state === 'working' || state === 'focused') && runningTool) {
+    for (const [re, text] of TOOL_SPEECH) {
+      if (re.test(runningTool)) return animateSpeech(text, now);
+    }
+  }
   const text = SPEECH[state];
   if (!text) return null;
-  if (state === 'calm' && Math.floor(now / 2700) % 2 === 1) return null;
-  return text;
+  // Calm hums: silent stroll most of the time, a brief note now and then.
+  if (state === 'calm' && Math.floor(now / 2700) % 3 !== 0) return null;
+  return animateSpeech(text, now);
 }
 
 function resolveSpriteKey(state: PetStateName, level: PetLevel): SpriteKey {
@@ -893,11 +1031,53 @@ function resolveOffset(
   return { offset: home, mirrored: false };
 }
 
+const GLIDE_STEP_MS = 350;
+const GLIDE_RESET_MS = 30_000;
+
+export interface PetMotion {
+  offset: number;
+  mirrored: boolean;
+  atMs: number;
+}
+
+/**
+ * Smooth motion between renders: instead of teleporting to the state's
+ * target offset, glide toward it at most one column per GLIDE_STEP_MS of
+ * elapsed time, facing the direction of travel. `prev` is the persisted
+ * position from the previous render; stale/missing history snaps to target.
+ */
+export function resolvePetMotion(
+  state: PetStateName,
+  level: PetLevel,
+  now: number,
+  areaWidth: number,
+  align: 'left' | 'right' = 'right',
+  prev?: PetMotion | null,
+): PetMotion {
+  const width = Math.max(PET_MIN_AREA, areaWidth);
+  const span = width - PET_SPRITE_WIDTH;
+  const target = resolveOffset(state, level, now, span, align);
+  if (!prev || prev.atMs >= now || now - prev.atMs > GLIDE_RESET_MS) {
+    return { ...target, atMs: now };
+  }
+  const from = Math.max(0, Math.min(span, prev.offset));
+  const delta = target.offset - from;
+  if (delta === 0) return { ...target, atMs: now };
+  const maxStep = Math.max(1, Math.round((now - prev.atMs) / GLIDE_STEP_MS));
+  const step = Math.sign(delta) * Math.min(Math.abs(delta), maxStep);
+  const offset = from + step;
+  if (offset === target.offset) return { ...target, atMs: now };
+  // Mid-glide: face the way we're moving (patrol convention — moving away
+  // from the home edge shows the mirrored sprite).
+  const movingAway = align === 'right' ? step < 0 : step > 0;
+  return { offset, mirrored: movingAway, atMs: now };
+}
+
 /**
  * Render the pet inside an `areaWidth`-wide strip (>= PET_MIN_AREA).
- * Returns 3 sprite rows — plus a 4th speech row when the current message
- * is too long to sit beside the head. Every row is exactly `areaWidth`
- * visible columns.
+ * Returns 3 sprite rows — plus a speech row directly below the sprite when
+ * the current message is too long to sit beside the head. Every row is
+ * exactly `areaWidth` visible columns.
  */
 export function renderPetArea(
   state: PetStateName,
@@ -906,6 +1086,9 @@ export function renderPetArea(
   areaWidth: number,
   align: 'left' | 'right' = 'right',
   styleName: PetStyleName = 'cat',
+  runningTool?: string | null,
+  alert?: PetStateName | null,
+  motion?: PetMotion | null,
 ): string[] {
   const style = STYLES[styleName] ?? STYLES.cat;
   const width = Math.max(PET_MIN_AREA, areaWidth);
@@ -913,7 +1096,7 @@ export function renderPetArea(
   const key = resolveSpriteKey(state, level);
   let map = pickFrame(key, state, now, style);
 
-  const { offset, mirrored } = resolveOffset(state, level, now, span, align);
+  const { offset, mirrored } = motion ?? resolveOffset(state, level, now, span, align);
   if (mirrored) {
     map = mirrorMap(map);
   }
@@ -923,19 +1106,36 @@ export function renderPetArea(
   const cells = renderSpriteCells(map);
   const rows = cells.map((row) => `${' '.repeat(leftPad)}${row}${' '.repeat(rightPad)}`);
 
-  const speech = speechFor(state, now);
+  // During an activity slice with an alert pending, the speech line keeps
+  // the alert visible by alternating activity text <-> alert text every 3s.
+  let speechState = state;
+  let speech = speechFor(state, now, runningTool);
+  if (alert && alert !== state && SPEECH[alert] && Math.floor(now / 3000) % 2 === 1) {
+    speechState = alert;
+    speech = animateSpeech(SPEECH[alert]!, now);
+  }
   if (speech) {
-    const colored = `${fgAnsi(SPEECH_COLOR[state] ?? SPEECH_MUTED)}${speech}${RESET}`;
+    const speechColor = SPEECH_COLOR[speechState] ?? SPEECH_MUTED;
+    const colored = `${fgAnsi(speechColor)}${speech}${RESET}`;
     const need = speech.length + 1;
     const short = speech.length <= SPEECH_BESIDE_MAX;
-    if (short && leftPad >= need) {
-      rows[0] = `${' '.repeat(leftPad - need)}${colored} ${cells[0]}${' '.repeat(rightPad)}`;
-    } else if (short && rightPad >= need) {
-      rows[0] = `${' '.repeat(leftPad)}${cells[0]} ${colored}${' '.repeat(rightPad - need)}`;
+    // Blank sprite cells render as plain spaces at the edges of the row;
+    // measure them so speech hugs the visible head, not the cell strip.
+    const headLeft = (cells[0].match(/^ */) ?? [''])[0].length;
+    const headRight = (cells[0].match(/ *$/) ?? [''])[0].length;
+    if (short && leftPad + headLeft >= need) {
+      // Animation pads speech with trailing spaces; on this side they'd sit
+      // between the text and the head, so move them out to the left.
+      const trimmed = speech.trimEnd();
+      const pad = speech.length - trimmed.length;
+      const coloredTrim = `${fgAnsi(speechColor)}${trimmed}${RESET}`;
+      rows[0] = `${' '.repeat(leftPad - need + pad + headLeft)}${coloredTrim} ${cells[0].slice(headLeft)}${' '.repeat(rightPad)}`;
+    } else if (short && rightPad + headRight >= need) {
+      const cut = headRight > 0 ? cells[0].slice(0, -headRight) : cells[0];
+      rows[0] = `${' '.repeat(leftPad)}${cut} ${colored}${' '.repeat(rightPad - need + headRight)}`;
     } else if (speech.length <= width) {
       const center = leftPad + Math.floor(PET_SPRITE_WIDTH / 2);
       const start = Math.max(0, Math.min(width - speech.length, center - Math.floor(speech.length / 2)));
-      rows.push(' '.repeat(width));
       rows.push(`${' '.repeat(start)}${colored}${' '.repeat(width - speech.length - start)}`);
     }
   }

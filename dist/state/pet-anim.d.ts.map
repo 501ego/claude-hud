@@ -1,0 +1,1 @@
+{"version":3,"file":"pet-anim.d.ts","sourceRoot":"","sources":["../../src/state/pet-anim.ts"],"names":[],"mappings":"AAWA,MAAM,WAAW,OAAO;IACtB,MAAM,EAAE,MAAM,CAAC;IACf,QAAQ,EAAE,OAAO,CAAC;IAClB,IAAI,EAAE,MAAM,CAAC;CACd;AA0BD,wBAAgB,WAAW,CAAC,cAAc,EAAE,MAAM,GAAG,OAAO,GAAG,IAAI,CAIlE;AAED,wBAAgB,YAAY,CAAC,cAAc,EAAE,MAAM,EAAE,IAAI,EAAE,OAAO,GAAG,IAAI,CAaxE"}

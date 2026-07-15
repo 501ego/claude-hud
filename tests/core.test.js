@@ -355,6 +355,38 @@ test('parseTranscript aggregates tools, agents, and todos', async () => {
   assert.equal(result.sessionStart?.toISOString(), '2024-01-01T00:00:00.000Z');
 });
 
+test('parseTranscript closes orphaned running tools on a text-only assistant reply', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
+  const filePath = path.join(dir, 'orphan-tools.jsonl');
+  const lines = [
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2024-01-01T00:00:00.000Z',
+      message: { content: [
+        { type: 'tool_use', id: 'tool-1', name: 'Read', input: { file_path: '/a.ts' } },
+        { type: 'tool_use', id: 'agent-1', name: 'Task', input: { subagent_type: 'explore' } },
+      ] },
+    }),
+    // tool-1 never logs a tool_result; the assistant just delivers the answer.
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2024-01-01T00:00:10.000Z',
+      message: { content: [{ type: 'text', text: 'all done' }] },
+    }),
+  ];
+  await writeFile(filePath, lines.join('\n'), 'utf8');
+
+  try {
+    const result = await parseTranscript(filePath);
+    const tool = result.tools.find((t) => t.id === 'tool-1');
+    assert.equal(tool.status, 'completed', 'orphaned tool must close when the turn ends');
+    const agent = result.agents.find((a) => a.id === 'agent-1');
+    assert.equal(agent.status, 'running', 'agents may keep running in the background');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('parseTranscript accumulates session token usage from assistant messages', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
   const filePath = path.join(dir, 'session-tokens.jsonl');

@@ -6,7 +6,8 @@ import { renderTodosLine } from './todos-line.js';
 import { renderIdentityLine, renderProjectLine, renderGitFilesLine, renderEnvironmentLine, renderUsageLine, renderMemoryLine, renderSessionStatsLine, } from './lines/index.js';
 import { dim, RESET } from './colors.js';
 import { getTerminalWidth, getWidthCandidates } from '../utils/terminal.js';
-import { renderPetArea, petBlankRow, PET_MIN_AREA } from './pet.js';
+import { renderPetArea, resolvePetMotion, petBlankRow, PET_MIN_AREA } from './pet.js';
+import { readPetAnim, writePetAnim } from '../state/pet-anim.js';
 const ANSI_ESCAPE_PATTERN = /^(?:\x1b\[[0-9;]*m|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\))/;
 const ANSI_ESCAPE_GLOBAL = /(?:\x1b\[[0-9;]*m|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\))/g;
 const GRAPHEME_SEGMENTER = typeof Intl.Segmenter === 'function'
@@ -363,9 +364,21 @@ export function render(ctx) {
     const petArea = petActive
         ? Math.max(PET_MIN_AREA, Math.min(petCfg?.roamWidth ?? 26, petAnchorWidth ? petAnchorWidth - 60 : PET_MIN_AREA))
         : 0;
-    const petRows = petActive && ctx.pet
-        ? renderPetArea(ctx.pet.state, ctx.pet.level, Date.now(), petArea, petPosition, petCfg?.style ?? 'cat')
-        : null;
+    let petRows = null;
+    if (petActive && ctx.pet) {
+        const petNow = Date.now();
+        const petState = ctx.pet.state;
+        const petLevel = ctx.pet.level;
+        // Glide from the previous render's persisted position toward the
+        // state's target so transitions are fluid instead of teleporting.
+        const transcriptPath = ctx.stdin.transcript_path;
+        const prevAnim = transcriptPath ? readPetAnim(transcriptPath) : null;
+        const motion = resolvePetMotion(petState, petLevel, petNow, petArea, petPosition, prevAnim);
+        if (transcriptPath)
+            writePetAnim(transcriptPath, motion);
+        petRows = renderPetArea(petState, petLevel, petNow, petArea, petPosition, petCfg?.style ?? 'cat', ctx.transcript.tools.find((t) => t.status === 'running')?.name
+            ?? (ctx.transcript.agents.some((a) => a.status === 'running') ? 'Task' : null), (ctx.pet.alert ?? null), motion);
+    }
     if (petRows) {
         petRows.unshift(petBlankRow(petArea));
     }

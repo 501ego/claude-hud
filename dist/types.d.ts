@@ -108,6 +108,7 @@ export interface RenderContext {
     pet?: {
         state: string;
         level: string;
+        alert?: string | null;
     } | null;
 }
 //# sourceMappingURL=types.d.ts.map

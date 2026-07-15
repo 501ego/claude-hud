@@ -117,5 +117,5 @@ export interface RenderContext {
   /** Estimated minutes until the 5h quota hits 100% (only set when before reset) */
   fiveHourExhaustMin?: number | null;
   /** Resolved pet status (null/undefined = pet disabled) */
-  pet?: { state: string; level: string } | null;
+  pet?: { state: string; level: string; alert?: string | null } | null;
 }

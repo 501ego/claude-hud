@@ -3,7 +3,8 @@ import * as path from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { createHash } from 'node:crypto';
 import { getHudPluginDir, getHomeDir } from './claude-config-dir.js';
-const CACHE_VERSION = 2;
+// v3: orphaned running tools are closed by text-only assistant messages.
+const CACHE_VERSION = 3;
 const MAX_CACHED_TOOLS = 100;
 const MAX_CACHED_AGENTS = 50;
 const MAX_CACHED_AGENT_MODELS = 200;
@@ -505,6 +506,20 @@ function processEntry(entry, state) {
             if (agent) {
                 agent.status = 'completed';
                 agent.endTime = timestamp;
+            }
+        }
+    }
+    // A text-only assistant message means the API turn is over: every earlier
+    // tool call must have resolved. Close any still marked running so orphaned
+    // tool_use blocks (interrupted / never-logged results) don't pin the HUD
+    // in a "running" state forever. Agents are exempt — they can keep running
+    // in the background while the assistant talks.
+    if (entry.type === 'assistant' && content.some((b) => b.type === 'text')
+        && !content.some((b) => b.type === 'tool_use')) {
+        for (const tool of toolMap.values()) {
+            if (tool.status === 'running' && tool.startTime.getTime() <= timestamp.getTime()) {
+                tool.status = 'completed';
+                tool.endTime = timestamp;
             }
         }
     }

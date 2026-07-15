@@ -152,6 +152,8 @@ export function quotaBrailleBar(percent, width = 8, colors) {
 }
 export function effortCurve(level) {
     switch ((level ?? '').toLowerCase()) {
+        case 'xhigh':
+            return '⣀⣶⣿⣿';
         case 'high':
         case 'max':
             return '⣀⣤⣶⣿';

@@ -1,14 +1,13 @@
 ---
 description: Pet the HUD pet — it reacts with a kawaii face
-allowed-tools: Bash
+allowed-tools: Bash(mkdir:*), Bash(touch:*)
 ---
 
-Pet the claude-hud statusline pet. Run exactly this command — no preamble, no analysis:
+The pet-touch file was already updated by the inline command below — the pet
+is reacting in the statusline right now. Do NOT run any command yourself.
 
-```bash
-dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/claude-hud"; mkdir -p "$dir"; touch "$dir/pet-touch"
-```
+!`dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/claude-hud"; mkdir -p "$dir"; touch "$dir/pet-touch"`
 
-Then reply with exactly one line and nothing else:
+Reply with exactly one line and nothing else:
 
 purr~

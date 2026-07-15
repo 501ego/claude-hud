@@ -1,9 +1,11 @@
 import type { TranscriptData, StdinData, UsageData } from '../types.js';
 export type PetLevel = 'egg' | 'kitten' | 'adult' | 'legend';
-export type PetStateName = 'egg' | 'calm' | 'working' | 'focused' | 'curious' | 'sleeping' | 'eating' | 'stressed' | 'burning' | 'panic' | 'error' | 'dizzy' | 'melted' | 'startled' | 'sad' | 'sick' | 'levelup' | 'kawaii';
+export type PetStateName = 'egg' | 'calm' | 'working' | 'focused' | 'thinking' | 'cheering' | 'waiting' | 'bored' | 'sleeping' | 'eating' | 'stressed' | 'burning' | 'panic' | 'error' | 'dizzy' | 'melted' | 'startled' | 'sad' | 'sick' | 'levelup' | 'kawaii';
 export interface PetStatus {
     state: PetStateName;
     level: PetLevel;
+    /** Active alert condition, even while the sprite shows an activity slice. */
+    alert?: PetStateName | null;
 }
 export interface ResolvePetInput {
     transcriptPath: string;
